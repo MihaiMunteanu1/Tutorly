@@ -7,3 +7,4 @@ pyjwt
 torch
 transformers
 openai-whisper
+ollama  

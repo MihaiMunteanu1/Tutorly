@@ -8,6 +8,7 @@ import jwt
 import requests
 import torch
 import whisper
+import ollama 
 from dotenv import load_dotenv
 from fastapi import (
     FastAPI,
@@ -21,6 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from app.ollama_client import OllamaTeacher
 
 
 # -------------------------------------------------------------------
@@ -31,9 +33,9 @@ load_dotenv()  # încarcă .env
 
 HEYGEN_API_KEY = os.getenv("HEYGEN_API_KEY")
 HEYGEN_VOICE_ID = os.getenv("HEYGEN_VOICE_ID")
-DIALOG_MODEL_PATH = os.getenv(
-    "DIALOG_MODEL_PATH", "../model/fine_tuned_dialoGPT/fine_tuned_dialoGPT"
-)
+# DIALOG_MODEL_PATH = os.getenv(
+#     "DIALOG_MODEL_PATH", "../model/fine_tuned_dialoGPT/fine_tuned_dialoGPT"
+# )
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-me")
 JWT_ALG = "HS256"
 
@@ -41,6 +43,8 @@ HEYGEN_GENERATE_URL = "https://api.heygen.com/v2/video/generate"
 HEYGEN_STATUS_URL = "https://api.heygen.com/v1/video_status.get"
 HEYGEN_AVATARS_URL = "https://api.heygen.com/v2/avatars"  # (nu-l mai folosim direct)
 HEYGEN_VOICES_URL = "https://api.heygen.com/v2/voices"
+
+model = OllamaTeacher()
 
 if not HEYGEN_API_KEY:
     raise RuntimeError("Lipsește HEYGEN_API_KEY în .env")
@@ -174,7 +178,7 @@ def load_dialog_model(path: str):
 
 
 print("=== PORNIRE BACKEND ===")
-dialog_tokenizer, dialog_model = load_dialog_model(DIALOG_MODEL_PATH)
+# dialog_tokenizer, dialog_model = load_dialog_model(DIALOG_MODEL_PATH)
 
 print("=== ÎNCARC MODELUL WHISPER ===")
 whisper_model = whisper.load_model("base")  # poți schimba în "small"/"medium"/"large"
@@ -195,6 +199,10 @@ def generate_reply(student_text: str, max_new_tokens: int = 80) -> str:
     full = dialog_tokenizer.decode(outputs[0], skip_special_tokens=True)
     reply = full.split("Tutor:", 1)[1].strip() if "Tutor:" in full else full.strip()
     return reply
+
+
+def generate_reply_ollama(student_question: str) -> str:
+    return model.ask(student_question)
 
 
 def transcribe_audio_file(filepath: str) -> str:
@@ -476,7 +484,7 @@ async def ask_question(
         print(f"[DEBUG] Text recunoscut: {student_text!r}")
 
         # 2. Răspuns tutor AI
-        tutor_reply = generate_reply(student_text)
+        tutor_reply = generate_reply_ollama(student_text)
         print(f"[DEBUG] Răspuns tutor: {tutor_reply!r}")
 
         # 3. Creare video HeyGen cu vocea și avatarul selectate
