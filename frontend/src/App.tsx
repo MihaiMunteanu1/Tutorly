@@ -8,6 +8,9 @@ import "./App.css";
 import { SubjectAvatarsPage } from "./pages/SubjectAvatarsPage";
 import { TextChatPage } from "./pages/TextChatPage";
 
+import ModePickerPage from "./pages/ModePickerPage";
+
+
 export function App() {
   return (
     <AuthProvider>
@@ -33,6 +36,8 @@ export function App() {
               <Route path="/avatars" element={<AvatarSelectionPage />} />
               <Route path="/text-chat" element={<TextChatPage />} />
                 <Route path="/voices" element={<VoiceSelectionPage />} />
+                <Route path="/mode" element={<ModePickerPage />} />
+
               <Route path="/chat" element={<ChatPage />} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>

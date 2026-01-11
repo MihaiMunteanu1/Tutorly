@@ -1,5 +1,5 @@
 
-import {useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getJobStatus, uploadQuestion } from "../api";
@@ -180,12 +180,19 @@ export function ChatPage() {
           </div>
         </div>
         {/*<div style={{ fontSize: 12, color: "#9ca3af" }}>Pasul 3 din 3</div>*/}
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <button className="button-secondary" onClick={() => navigate("/text-chat")}>
-            Chat
-          </button>
-          <div style={{ fontSize: 12, color: "#9ca3af" }}>Pasul 3 din 3</div>
-         </div>
+          <button
+  className="button-secondary"
+  onClick={() => navigate("/subjects")}
+  style={{
+    padding: "6px 12px",   // smaller vertical padding => smaller height
+    lineHeight: 1.1,
+    fontSize: 13,
+    minHeight: 0,          // avoid any enforced min-height
+    height: 50,
+  }}
+>
+  Back
+</button>
 
       </div>
 

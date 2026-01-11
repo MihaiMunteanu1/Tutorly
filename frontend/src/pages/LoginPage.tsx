@@ -18,7 +18,7 @@ export function LoginPage() {
     try {
       const res = await login(username, password);
       setToken(res.access_token);
-      navigate("/subjects");
+      navigate("/mode");
     } catch {
       setError("Login eșuat. Verifică username/parola.");
     } finally {
