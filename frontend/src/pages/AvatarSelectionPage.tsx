@@ -76,86 +76,148 @@ export function AvatarSelectionPage() {
           marginTop: 8,
         }}
       >
-        {avatars.map((av) => (
-          <button
-            key={av.id}
-            onClick={() => handleSelect(av)}
-            style={{
-              border: "none",
-              padding: 0,
-              background: "transparent",
-              textAlign: "left",
-              cursor: "pointer",
-            }}
-          >
+          {avatars.map((av) => {
+  const firstName = (av.name ?? "").trim().split(/\s+/)[0] ?? "";
+
+  return (
+    <button
+      key={av.id}
+      onClick={() => handleSelect(av)}
+      style={{
+        border: "none",
+        padding: 0,
+        background: "transparent",
+        textAlign: "left",
+        cursor: "pointer",
+      }}
+    >
+      <div
+        style={{
+          borderRadius: 16,
+          border: "1px solid rgba(148,163,184,0.5)",
+          overflow: "hidden",
+          background: "rgba(15,23,42,0.9)",
+        }}
+      >
+        <div style={{ aspectRatio: "9 / 16", overflow: "hidden" }}>
+          {av.image_url ? (
+            <img
+              src={av.image_url}
+              alt={firstName}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
+          ) : (
             <div
               style={{
-                borderRadius: 16,
-                border: "1px solid rgba(148,163,184,0.5)",
-                overflow: "hidden",
-                background: "rgba(15,23,42,0.9)",
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 13,
+                color: "#6b7280",
               }}
             >
-              <div style={{ aspectRatio: "9 / 16", overflow: "hidden" }}>
-                {av.image_url ? (
-                  <img
-                    src={av.image_url}
-                    alt={av.name}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      display: "block",
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 13,
-                      color: "#6b7280",
-                    }}
-                  >
-                    Fără preview
-                  </div>
-                )}
-              </div>
-              <div style={{ padding: "10px 10px 12px" }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#e5e7eb" }}>{av.name}</div>
-                {/*<div*/}
-                {/*  style={{*/}
-                {/*    fontSize: 11,*/}
-                {/*    color: "#9ca3af",*/}
-                {/*    marginTop: 2,*/}
-                {/*    whiteSpace: "nowrap",*/}
-                {/*    overflow: "hidden",*/}
-                {/*    textOverflow: "ellipsis",*/}
-                {/*  }}*/}
-                {/*>*/}
-                {/*  {av.id}*/}
-                {/*</div>*/}
-                <div
-                  style={{
-                    marginTop: 8,
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  {/*<span style={{ fontSize: 11, color: "#a5b4fc" }}>*/}
-                  {/*  Video avatar*/}
-                  {/*</span>*/}
-                  {/*<span style={{ fontSize: 11, color: "#9ca3af" }}>*/}
-                  {/*  Selectează*/}
-                  {/*</span>*/}
-                </div>
-              </div>
+              Fără preview
             </div>
-          </button>
-        ))}
+          )}
+        </div>
+
+        <div style={{ padding: "10px 10px 12px" }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#e5e7eb" }}>
+            {firstName}
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+})}
+        {/*{avatars.map((av) => (*/}
+        {/*  */}
+        {/*    <button*/}
+        {/*    key={av.id}*/}
+        {/*    onClick={() => handleSelect(av)}*/}
+        {/*    style={{*/}
+        {/*      border: "none",*/}
+        {/*      padding: 0,*/}
+        {/*      background: "transparent",*/}
+        {/*      textAlign: "left",*/}
+        {/*      cursor: "pointer",*/}
+        {/*    }}*/}
+        {/*  >*/}
+        {/*    <div*/}
+        {/*      style={{*/}
+        {/*        borderRadius: 16,*/}
+        {/*        border: "1px solid rgba(148,163,184,0.5)",*/}
+        {/*        overflow: "hidden",*/}
+        {/*        background: "rgba(15,23,42,0.9)",*/}
+        {/*      }}*/}
+        {/*    >*/}
+        {/*      <div style={{ aspectRatio: "9 / 16", overflow: "hidden" }}>*/}
+        {/*        {av.image_url ? (*/}
+        {/*          <img*/}
+        {/*            src={av.image_url}*/}
+        {/*            alt={firstName}*/}
+        {/*            style={{*/}
+        {/*              width: "100%",*/}
+        {/*              height: "100%",*/}
+        {/*              objectFit: "cover",*/}
+        {/*              display: "block",*/}
+        {/*            }}*/}
+        {/*          />*/}
+        {/*        ) : (*/}
+        {/*          <div*/}
+        {/*            style={{*/}
+        {/*              width: "100%",*/}
+        {/*              height: "100%",*/}
+        {/*              display: "flex",*/}
+        {/*              alignItems: "center",*/}
+        {/*              justifyContent: "center",*/}
+        {/*              fontSize: 13,*/}
+        {/*              color: "#6b7280",*/}
+        {/*            }}*/}
+        {/*          >*/}
+        {/*            Fără preview*/}
+        {/*          </div>*/}
+        {/*        )}*/}
+        {/*      </div>*/}
+        {/*      <div style={{ padding: "10px 10px 12px" }}>*/}
+        {/*        <div style={{ fontSize: 14, fontWeight: 600, color: "#e5e7eb" }}>{av.name}</div>*/}
+        {/*        /!*<div*!/*/}
+        {/*        /!*  style={{*!/*/}
+        {/*        /!*    fontSize: 11,*!/*/}
+        {/*        /!*    color: "#9ca3af",*!/*/}
+        {/*        /!*    marginTop: 2,*!/*/}
+        {/*        /!*    whiteSpace: "nowrap",*!/*/}
+        {/*        /!*    overflow: "hidden",*!/*/}
+        {/*        /!*    textOverflow: "ellipsis",*!/*/}
+        {/*        /!*  }}*!/*/}
+        {/*        /!*>*!/*/}
+        {/*        /!*  {av.id}*!/*/}
+        {/*        /!*</div>*!/*/}
+        {/*        <div*/}
+        {/*          style={{*/}
+        {/*            marginTop: 8,*/}
+        {/*            display: "flex",*/}
+        {/*            justifyContent: "space-between",*/}
+        {/*          }}*/}
+        {/*        >*/}
+        {/*          /!*<span style={{ fontSize: 11, color: "#a5b4fc" }}>*!/*/}
+        {/*          /!*  Video avatar*!/*/}
+        {/*          /!*</span>*!/*/}
+        {/*          /!*<span style={{ fontSize: 11, color: "#9ca3af" }}>*!/*/}
+        {/*          /!*  Selectează*!/*/}
+        {/*          /!*</span>*!/*/}
+        {/*        </div>*/}
+        {/*      </div>*/}
+        {/*    </div>*/}
+        {/*  </button>*/}
+        {/*))}*/}
       </div>
     </div>
   );

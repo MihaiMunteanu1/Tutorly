@@ -2,7 +2,11 @@
 #TODO de adaugat modelul
 #TODO de adaugat API de la HeyGen
 
--  install -r requirements.txt
+- python -m venv .venv
+- .\.venv\Scripts\Activate.ps1
+
+
+-  pip install -r requirements.txt
 -  uvicorn app.main:app --reload
 
 De activat acest .venv cand se porneste aplicatia

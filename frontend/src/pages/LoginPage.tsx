@@ -6,7 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 export function LoginPage() {
   const { setToken } = useAuth();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("student");
+  const [username, setUsername] = useState("Student");
   const [password, setPassword] = useState("parola123");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

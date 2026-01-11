@@ -54,7 +54,6 @@ AVATAR_GROUP_IDS: List[str] = [
     "1727664276",
     "1727672614",
     "1727662464",
-    "1727713206",
     "1727686832",
     "1733544514",
     "1731908055",
@@ -65,6 +64,7 @@ AVATAR_GROUP_IDS: List[str] = [
     "1727621284",
     "1727720732",
     "1727708884",
+    "1727713206",
     "1732927739",
 ]
 
@@ -129,7 +129,7 @@ security = HTTPBearer()
 # -------------------------------------------------------------------
 
 FAKE_USERS_DB = {
-    "student": "parola123"
+    "Student": "parola123"
 }
 
 
@@ -183,22 +183,6 @@ print("=== PORNIRE BACKEND ===")
 print("=== ÎNCARC MODELUL WHISPER ===")
 whisper_model = whisper.load_model("base")  # poți schimba în "small"/"medium"/"large"
 print("Whisper încărcat.")
-
-
-def generate_reply(student_text: str, max_new_tokens: int = 80) -> str:
-    prompt = f"Student: {student_text} Tutor: "
-    inputs = dialog_tokenizer(prompt, return_tensors="pt").to(device)
-
-    with torch.no_grad():
-        outputs = dialog_model.generate(
-            **inputs,
-            max_new_tokens=max_new_tokens,
-            pad_token_id=dialog_tokenizer.eos_token_id,
-        )
-
-    full = dialog_tokenizer.decode(outputs[0], skip_special_tokens=True)
-    reply = full.split("Tutor:", 1)[1].strip() if "Tutor:" in full else full.strip()
-    return reply
 
 
 def generate_reply_ollama(student_question: str) -> str:
@@ -407,7 +391,8 @@ def get_cached_voices() -> List[Voice]:
 
     for item in items:
         voice_id = item.get("voice_id")
-        name = (item.get("name") or "").strip()
+        name = ((item.get("name") or "").strip().split()[:1] or [""])[0]
+
         language = item.get("language")
         gender = item.get("gender")
         preview_audio = (item.get("preview_audio") or "").strip()

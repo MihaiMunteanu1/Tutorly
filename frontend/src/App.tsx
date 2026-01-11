@@ -22,9 +22,6 @@ export function App() {
                 </p>
               </div>
             </div>
-            <div className="app-header-right">
-              <span className="app-badge">Beta</span>
-            </div>
           </header>
 
           <main className="app-main">
