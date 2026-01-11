@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getJobStatus, uploadQuestion } from "../api";
@@ -99,6 +99,14 @@ export function ChatPage() {
       setStatus("Eroare la trimiterea întrebării.");
     }
   }
+    function getFirstName(fullName: string) {
+      const trimmed = fullName.trim();
+      if (!trimmed) return "";
+      return trimmed.split(/\s+/)[0] ?? trimmed;
+    }
+
+    const avatarFirstName = getFirstName(avatar.name);
+
 
   return (
     <div className="card" style={{ width: 960, marginTop: 20 }}>
@@ -145,7 +153,7 @@ export function ChatPage() {
           </div>
           <div>
             <h2 style={{ margin: 0 }}>
-              Întrebări vocale către {avatar.name}
+              Întrebări vocale către {avatarFirstName}
             </h2>
             <p
               style={{
