@@ -8,39 +8,24 @@ import "./App.css";
 import { SubjectAvatarsPage } from "./pages/SubjectAvatarsPage";
 import { TextChatPage } from "./pages/TextChatPage";
 import { CreateYourselfPage } from "./pages/CreateYourselfPage";
-
 import ModePickerPage from "./pages/ModePickerPage";
-
 
 export function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <div className="app-shell">
-          {/* header */}
-          <header className="app-header">
-            <div className="app-header-left">
-              <span className="app-logo">🎓</span>
-              <div>
-                <h1 className="app-title">Tutor Avatar</h1>
-                <p className="app-subtitle">
-                  Întrebări vocale, răspunsuri video cu avatar AI
-                </p>
-              </div>
-            </div>
-          </header>
+          {/* Header has been removed from here */}
 
           <main className="app-main">
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/subjects" element={<SubjectAvatarsPage />} />
-             <Route path="/create-yourself" element={<CreateYourselfPage />} />
-
+              <Route path="/create-yourself" element={<CreateYourselfPage />} />
               <Route path="/avatars" element={<AvatarSelectionPage />} />
               <Route path="/text-chat" element={<TextChatPage />} />
-                <Route path="/voices" element={<VoiceSelectionPage />} />
-                <Route path="/mode" element={<ModePickerPage />} />
-
+              <Route path="/voices" element={<VoiceSelectionPage />} />
+              <Route path="/mode" element={<ModePickerPage />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
