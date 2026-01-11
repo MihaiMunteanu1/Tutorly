@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getVoices, type Voice } from "../api";
 import { useAuth } from "../auth/AuthContext";
@@ -75,7 +75,20 @@ export function VoiceSelectionPage() {
             Selectează vocea cu care avatarul tău va răspunde.
           </p>
         </div>
-        <div style={{ fontSize: 12, color: "#9ca3af" }}>Pasul 3 din 4</div>
+        {/*<div style={{ fontSize: 12, color: "#9ca3af" }}>Pasul 3 din 4</div>*/}
+          <button
+  className="button-secondary"
+  onClick={() => navigate("/avatars")}
+  style={{
+    padding: "6px 12px",   // smaller vertical padding => smaller height
+    lineHeight: 1.1,
+    fontSize: 13,
+    minHeight: 0,          // avoid any enforced min-height
+    height: 50,
+  }}
+>
+  Back
+</button>
       </div>
 
       <div
