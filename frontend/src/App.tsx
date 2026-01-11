@@ -5,6 +5,8 @@ import { AvatarSelectionPage } from "./pages/AvatarSelectionPage";
 import { VoiceSelectionPage } from "./pages/VoiceSelectionPage";
 import { ChatPage } from "./pages/ChatPage";
 import "./App.css";
+import { SubjectAvatarsPage } from "./pages/SubjectAvatarsPage";
+import { TextChatPage } from "./pages/TextChatPage";
 
 export function App() {
   return (
@@ -27,8 +29,10 @@ export function App() {
           <main className="app-main">
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/subjects" element={<SubjectAvatarsPage />} />
               <Route path="/avatars" element={<AvatarSelectionPage />} />
-              <Route path="/voices" element={<VoiceSelectionPage />} />
+              <Route path="/text-chat" element={<TextChatPage />} />
+                <Route path="/voices" element={<VoiceSelectionPage />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>

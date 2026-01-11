@@ -1,85 +1,62 @@
-import { useEffect, useRef, useState } from "react";
+
+import {useEffect, useRef, useState} from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getJobStatus, uploadQuestion } from "../api";
-
-interface Message {
-  id: string;
-  sender: "user" | "bot";
-  type: "text" | "audio" | "video";
-  content?: string;
-  status?: "pending" | "completed" | "failed";
-}
 
 export function ChatPage() {
   const { token, avatar, voice } = useAuth();
   const navigate = useNavigate();
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  // NEW: Toggle for Video vs Text
-  const [useVideoResponse, setUseVideoResponse] = useState(true);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [status, setStatus] = useState<string>("");
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
-  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
+
 
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (!token) {
+      navigate("/login");
+    } else if (!avatar) {
+      navigate("/avatars");
+    } else if (!voice) {
+      navigate("/voices");
     }
-  }, [messages]);
-
-  useEffect(() => {
-    if (!token) navigate("/login");
-    else if (!avatar) navigate("/avatars");
-    else if (!voice) navigate("/voices");
   }, [token, avatar, voice, navigate]);
 
-  if (!token || !avatar || !voice) return null;
+  // Dacă nu avem toate datele, nu randăm (redirect-ul se face în useEffect)
+  if (!token || !avatar || !voice) {
+    return null;
+  }
 
-  // --- STREAMING LOGIC ---
-  const simulateStreaming = (fullText: string, messageId: string) => {
-    const words = fullText.split(" ");
-    let currentText = "";
-    let index = 0;
-
-    const interval = setInterval(() => {
-      if (index < words.length) {
-        currentText += words[index] + " ";
-        updateMessage(messageId, {
-          content: currentText,
-          status: "completed",
-          type: "text"
-        });
-        index++;
-      } else {
-        clearInterval(interval);
-        setIsProcessing(false);
-      }
-    }, 70); // Adjust speed here (ms per word)
-  };
-
-  // --- RECORDING LOGIC ---
   async function startRecording() {
-    chunksRef.current = [];
+    setStatus("");
+    setVideoUrl(null);
+    setAudioBlob(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      chunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
       recorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        handleSend(blob);
+        setAudioBlob(blob);
         stream.getTracks().forEach((t) => t.stop());
       };
+
       recorder.start();
       mediaRecorderRef.current = recorder;
       setIsRecording(true);
     } catch {
-      alert("Nu am acces la microfon.");
+      setStatus("Nu am acces la microfon. Verifică permisiunile browserului.");
     }
   }
 
@@ -88,180 +65,259 @@ export function ChatPage() {
     setIsRecording(false);
   }
 
-  // --- MESSAGE HANDLING ---
-  async function handleSend(audioBlob?: Blob) {
-    if (!inputText.trim() && !audioBlob) return;
-
-    const userMsgId = Date.now().toString();
-    const botMsgId = (Date.now() + 1).toString();
-
-    const userMsg: Message = {
-      id: userMsgId,
-      sender: "user",
-      type: audioBlob ? "audio" : "text",
-      content: audioBlob ? URL.createObjectURL(audioBlob) : inputText,
-    };
-
-    const botMsg: Message = {
-      id: botMsgId,
-      sender: "bot",
-      type: useVideoResponse ? "video" : "text",
-      status: "pending",
-      content: "",
-    };
-
-    setMessages((prev) => [...prev, userMsg, botMsg]);
-    setInputText("");
-    setIsProcessing(true);
-
+  async function handleGenerate() {
+    if (!audioBlob) {
+      setStatus("Nu există înregistrare audio.");
+      return;
+    }
+    setStatus("Trimit întrebarea la server...");
     try {
-      // Logic assumes uploadQuestion might need to be adjusted later
-      // to return text immediately if you want text-only mode
       const { job_id } = await uploadQuestion(
         token!,
         avatar!.id,
         voice!.id,
-        audioBlob || new Blob()
+        audioBlob
       );
+      setStatus("Întrebarea a fost trimisă. Aștept să fie generat video-ul...");
 
-      if (useVideoResponse) {
-        // VIDEO MODE: Poll HeyGen
-        const interval = setInterval(async () => {
-          try {
-            const res = await getJobStatus(token!, job_id);
-            if (res.status === "completed" && res.video_url) {
-              updateMessage(botMsgId, { status: "completed", content: res.video_url });
-              clearInterval(interval);
-              setIsProcessing(false);
-            } else if (["failed", "error", "canceled"].includes(res.status.toLowerCase())) {
-              updateMessage(botMsgId, { status: "failed" });
-              clearInterval(interval);
-              setIsProcessing(false);
-            }
-          } catch {
+      const interval = setInterval(async () => {
+        try {
+          const res = await getJobStatus(token!, job_id);
+          setStatus(`Status: ${res.status}`);
+
+          if (res.status === "completed" && res.video_url) {
+            setVideoUrl(res.video_url);
             clearInterval(interval);
-            setIsProcessing(false);
+          } else if (
+            ["failed", "error", "canceled"].includes(res.status.toLowerCase())
+          ) {
+            clearInterval(interval);
           }
-        }, 4000);
-      } else {
-        // TEXT MODE:
-        // Note: For now, we simulate a text response.
-        // In a real scenario, your backend should return the text string here.
-        const mockResponse = "Acesta este un răspuns text simulat de la tutorul tău AI, generat cuvânt cu cuvânt.";
-        simulateStreaming(mockResponse, botMsgId);
-      }
-    } catch (err) {
-      updateMessage(botMsgId, { status: "failed" });
-      setIsProcessing(false);
+        } catch {
+          clearInterval(interval);
+        }
+      }, 5000);
+    } catch {
+      setStatus("Eroare la trimiterea întrebării.");
     }
   }
+    function getFirstName(fullName: string) {
+      const trimmed = fullName.trim();
+      if (!trimmed) return "";
+      return trimmed.split(/\s+/)[0] ?? trimmed;
+    }
 
-  function updateMessage(id: string, updates: Partial<Message>) {
-    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)));
-  }
+    const avatarFirstName = getFirstName(avatar.name);
+
 
   return (
-    <div className="card" style={{
-      width: 960, height: "85vh", display: "flex", flexDirection: "column",
-      marginTop: 20, padding: 0, overflow: "hidden"
-    }}>
-
-      {/* HEADER */}
-      <div style={{
-        padding: "16px 24px", borderBottom: "1px solid rgba(148,163,184,0.2)",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        background: "rgba(15,23,42,0.9)"
-      }}>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <img
-            src={avatar.image_url ?? ""} alt={avatar.name}
-            style={{ width: 45, height: 45, borderRadius: "50%", objectFit: "cover", border: "1px solid #3b82f6" }}
-          />
-          <div>
-            <h3 style={{ margin: 0, fontSize: 16 }}>{avatar.name}</h3>
-            <span style={{ fontSize: 12, color: "#9ca3af" }}>Voce: {voice.name}</span>
-          </div>
-        </div>
-
-        {/* NEW: MODE TOGGLE */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(30,41,59,0.5)", padding: "4px 12px", borderRadius: 20 }}>
-          <span style={{ fontSize: 12, color: !useVideoResponse ? "#fff" : "#6b7280" }}>Text</span>
+    <div className="card" style={{ width: 960, marginTop: 20 }}>
+      {/* Header cu avatar + voce */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ display: "flex", gap: 12 }}>
           <div
-            onClick={() => setUseVideoResponse(!useVideoResponse)}
             style={{
-              width: 40, height: 20, background: useVideoResponse ? "#3b82f6" : "#475569",
-              borderRadius: 10, position: "relative", cursor: "pointer", transition: "0.3s"
+              width: 60,
+              height: 90,
+              borderRadius: 12,
+              overflow: "hidden",
+              border: "1px solid rgba(148,163,184,0.7)",
+              background: "rgba(15,23,42,0.8)",
             }}
           >
-            <div style={{
-              width: 16, height: 16, background: "white", borderRadius: "50%",
-              position: "absolute", top: 2, left: useVideoResponse ? 22 : 2, transition: "0.3s"
-            }} />
+            {avatar.image_url ? (
+              <img
+                src={avatar.image_url}
+                alt={avatar.name}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  color: "#9ca3af",
+                }}
+              >
+                {avatar.name}
+              </div>
+            )}
           </div>
-          <span style={{ fontSize: 12, color: useVideoResponse ? "#fff" : "#6b7280" }}>Video</span>
+          <div>
+            <h2 style={{ margin: 0 }}>
+              Întrebări vocale către {avatarFirstName}
+            </h2>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 13,
+                color: "#9ca3af",
+              }}
+            >
+              Apasă “Start recording”, pune întrebarea, apoi “Generate answer”.
+            </p>
+            <p
+              style={{
+                margin: "4px 0 0",
+                fontSize: 11,
+                color: "#6b7280",
+              }}
+            >
+              {/*Avatar ID: {avatar.id}*/}
+              {/*{" · "}*/}
+             <p style={{fontSize: 12, color: "#9ca3af"}}>  Voce: {voice.name}</p>
+            </p>
+          </div>
         </div>
+        {/*<div style={{ fontSize: 12, color: "#9ca3af" }}>Pasul 3 din 3</div>*/}
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <button className="button-secondary" onClick={() => navigate("/text-chat")}>
+            Chat
+          </button>
+          <div style={{ fontSize: 12, color: "#9ca3af" }}>Pasul 3 din 3</div>
+         </div>
+
       </div>
 
-      {/* CHAT AREA */}
-      <div style={{
-        flex: 1, overflowY: "auto", padding: "24px", display: "flex",
-        flexDirection: "column", gap: 20, background: "linear-gradient(to bottom, transparent, rgba(15,23,42,0.5))"
-      }}>
-        {messages.map((msg) => (
-          <div key={msg.id} style={{ display: "flex", justifyContent: msg.sender === "user" ? "flex-end" : "flex-start" }}>
-            <div style={{
-              maxWidth: "70%", padding: "12px 16px", borderRadius: 18,
-              background: msg.sender === "user" ? "#3b82f6" : "rgba(30,41,59,0.8)",
-              border: msg.sender === "bot" ? "1px solid rgba(148,163,184,0.2)" : "none",
-              color: "white"
-            }}>
-              {msg.type === "text" && <p style={{ margin: 0, fontSize: 14, lineHeight: "1.5" }}>{msg.content}</p>}
-              {msg.type === "audio" && <audio src={msg.content ?? ""} controls style={{ height: 32 }} />}
-              {msg.type === "video" && (
-                <div style={{ minWidth: 280 }}>
-                  {msg.status === "pending" ? (
-                    <div style={{ padding: 10, fontSize: 13, color: "#9ca3af" }}>⚡ {avatar.name} generează video...</div>
-                  ) : msg.status === "failed" ? (
-                    <div style={{ color: "#f97373", fontSize: 13 }}>Eroare la generare video.</div>
-                  ) : (
-                    <video src={msg.content ?? ""} controls autoPlay style={{ width: "100%", borderRadius: 12 }} />
-                  )}
-                </div>
-              )}
-            </div>
+      {/* Layout 2 coloane: stânga audio, dreapta video */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 1.2fr)",
+          gap: 24,
+          alignItems: "flex-start",
+        }}
+      >
+        {/* Col stânga – înregistrare audio */}
+        <div>
+          <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: 15 }}>
+            Înregistrare întrebare
+          </h3>
+          <p
+            style={{
+              fontSize: 13,
+              color: "#9ca3af",
+              marginTop: 0,
+              marginBottom: 10,
+            }}
+          >
+            Max ~8 secunde.
+          </p>
+
+          <div style={{ display: "flex", gap: 12, marginBottom: 10 }}>
+            {!isRecording ? (
+              <button className="button-primary" onClick={startRecording}>
+                🎙️ Start recording
+              </button>
+            ) : (
+              <button className="button-primary" onClick={stopRecording}>
+                ⏹️ Stop
+              </button>
+            )}
+            <button
+              className="button-secondary"
+              onClick={() => setAudioBlob(null)}
+              disabled={!audioBlob}
+            >
+              Șterge înregistrarea
+            </button>
           </div>
-        ))}
-        <div ref={chatEndRef} />
-      </div>
 
-      {/* INPUT AREA */}
-      <div style={{ padding: "20px 24px", borderTop: "1px solid rgba(148,163,184,0.2)", background: "rgba(15,23,42,0.95)" }}>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <button
-            onClick={isRecording ? stopRecording : startRecording}
-            className="button-primary"
-            disabled={isProcessing}
-            style={{ width: 50, height: 50, borderRadius: "50%", padding: 0, background: isRecording ? "#ef4444" : undefined }}
+          {audioBlob && (
+            <div
+              style={{
+                borderRadius: 12,
+                border: "1px solid rgba(148,163,184,0.4)",
+                padding: 12,
+                background: "rgba(15,23,42,0.7)",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 13,
+                  marginTop: 0,
+                  marginBottom: 6,
+                }}
+              >
+                Înregistrare gata. Poți asculta sau genera răspunsul.
+              </p>
+              <audio controls src={URL.createObjectURL(audioBlob)} />
+            </div>
+          )}
+
+          <div style={{ marginTop: 16 }}>
+            <button
+              className="button-primary"
+              onClick={handleGenerate}
+              disabled={!audioBlob}
+            >
+              🚀 Generate answer (avatar video)
+            </button>
+          </div>
+
+          {status && (
+            <p
+              style={{
+                marginTop: 12,
+                fontSize: 13,
+                color: "#e5e7eb",
+              }}
+            >
+              {status}
+            </p>
+          )}
+        </div>
+
+        {/* Col dreapta – video răspuns */}
+        <div>
+          <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: 15 }}>
+            Video răspuns
+          </h3>
+          <p
+            style={{
+              fontSize: 13,
+              color: "#9ca3af",
+              marginTop: 0,
+              marginBottom: 10,
+            }}
           >
-            {isRecording ? "⏹️" : "🎙️"}
-          </button>
-          <input
-            className="input-field"
-            placeholder="Scrie o întrebare..."
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !isProcessing && handleSend()}
-            disabled={isProcessing}
-            style={{ flex: 1, borderRadius: 25, padding: "12px 20px" }}
-          />
-          <button
-            className="button-primary"
-            onClick={() => handleSend()}
-            disabled={isProcessing || (!inputText.trim() && !isRecording)}
-            style={{ borderRadius: 25, padding: "10px 20px" }}
+            Când se termină randarea, video-ul va apărea aici.
+          </p>
+          <div
+            style={{
+              borderRadius: 16,
+              border: "1px solid rgba(148,163,184,0.4)",
+              padding: 12,
+              background: "rgba(15,23,42,0.7)",
+              minHeight: 260,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            Trimite
-          </button>
+            {videoUrl ? (
+              <video
+                src={videoUrl}
+                controls
+                style={{ width: "100%", borderRadius: 12 }}
+              />
+            ) : (
+              <span style={{ fontSize: 13, color: "#6b7280" }}>
+                Încă nu ai generat niciun video. Înregistrează o întrebare și
+                apasă “Generate answer”.
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
