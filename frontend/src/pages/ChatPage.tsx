@@ -16,6 +16,8 @@ export function ChatPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
 
+
+
   useEffect(() => {
     if (!token) {
       navigate("/login");
@@ -177,7 +179,14 @@ export function ChatPage() {
             </p>
           </div>
         </div>
-        <div style={{ fontSize: 12, color: "#9ca3af" }}>Pasul 3 din 3</div>
+        {/*<div style={{ fontSize: 12, color: "#9ca3af" }}>Pasul 3 din 3</div>*/}
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <button className="button-secondary" onClick={() => navigate("/text-chat")}>
+            Chat
+          </button>
+          <div style={{ fontSize: 12, color: "#9ca3af" }}>Pasul 3 din 3</div>
+         </div>
+
       </div>
 
       {/* Layout 2 coloane: stânga audio, dreapta video */}

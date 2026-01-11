@@ -18,6 +18,21 @@ export type Voice = {
   preview_audio?: string | null;
 };
 
+export type HeygenGroupAvatarItem = {
+  avatar_id: string;
+  avatar_name?: string;
+  preview_image_url?: string;
+  preview_video_url?: string;
+  gender?: string;
+};
+
+export type HeygenGroupResponse = {
+  data?: {
+    avatar_list?: HeygenGroupAvatarItem[];
+    avatars?: HeygenGroupAvatarItem[];
+  };
+};
+
 export async function login(username: string, password: string) {
   const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
@@ -41,6 +56,26 @@ export async function getVoices(token: string): Promise<Voice[]> {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Cannot get voices");
+  return res.json();
+}
+
+export async function getHeygenAvatarsByGroup(
+  token: string,
+  groupId: string
+): Promise<HeygenGroupResponse> {
+  const res = await fetch(`${API_URL}/api/heygen/avatar-group/${groupId}/avatars`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`HeyGen group avatars failed: ${res.status} ${text}`);
+  }
+
   return res.json();
 }
 
