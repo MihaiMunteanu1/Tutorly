@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/api.ts","./src/main.tsx","./src/auth/authcontext.tsx","./src/pages/avatarselectionpage.tsx","./src/pages/chatpage.tsx","./src/pages/createyourselfpage.tsx","./src/pages/loginpage.tsx","./src/pages/modepickerpage.tsx","./src/pages/subjectavatarspage.tsx","./src/pages/textchatpage.tsx","./src/pages/voiceselectionpage.tsx"],"version":"5.9.3"}

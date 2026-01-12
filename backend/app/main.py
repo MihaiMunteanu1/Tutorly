@@ -172,27 +172,21 @@ def create_heygen_video_from_avatar_id(text: str, avatar_id: str, voice_id: str)
         ],
         "dimension": {"width": 1280, "height": 720},
     }
-    headers = {"X-Api-Key": HEYGEN_API_KEY, "Content-Type": "application/json", "Accept": "application/json"}
-    resp = requests.post(HEYGEN_GENERATE_URL, json=payload, headers=headers, timeout=60)
-    resp.raise_for_status()
-    data = resp.json()
-    video_id = data.get("data", {}).get("video_id") or data.get("video_id")
+
+    data = _heygen_post_generate(payload)
+    video_id = (data.get("data") or {}).get("video_id") or data.get("video_id")
     if not video_id:
-        raise RuntimeError(f"Missing video_id in HeyGen response: {data}")
+        raise HTTPException(status_code=502, detail=f"Missing video_id in HeyGen response: {data}")
     return video_id
 
 def create_heygen_video_from_photo_url(text: str, photo_url: str, voice_id: str) -> str:
-    """
-    Solution for \`no avatar_id\`: generate video using a photo/image character.
-    HeyGen supports image/photo based character inputs in v2 video generate.
-    """
     payload = {
         "title": "Photo avatar raspuns",
         "video_inputs": [
             {
                 "character": {
-                    "type": "photo",
-                    "photo_url": photo_url,
+                    "type": "talking_photo",
+                    "talking_photo_url": photo_url,
                 },
                 "voice": {
                     "type": "text",
@@ -204,14 +198,106 @@ def create_heygen_video_from_photo_url(text: str, photo_url: str, voice_id: str)
         ],
         "dimension": {"width": 1280, "height": 720},
     }
-    headers = {"X-Api-Key": HEYGEN_API_KEY, "Content-Type": "application/json", "Accept": "application/json"}
-    resp = requests.post(HEYGEN_GENERATE_URL, json=payload, headers=headers, timeout=60)
-    resp.raise_for_status()
-    data = resp.json()
-    video_id = data.get("data", {}).get("video_id") or data.get("video_id")
+
+    data = _heygen_post_generate(payload)
+    video_id = (data.get("data") or {}).get("video_id") or data.get("video_id")
     if not video_id:
-        raise RuntimeError(f"Missing video_id in HeyGen response: {data}")
+        raise HTTPException(status_code=502, detail=f"Missing video_id in HeyGen response: {data}")
     return video_id
+
+
+def create_heygen_video_from_talking_photo_id(text: str, talking_photo_id: str, voice_id: str) -> str:
+    """Generate a video using a HeyGen talking photo (photo avatar group) id.
+
+    HeyGen requirement (per user):
+    - Use talking_photo_id
+    - Set character.type = talking_photo
+    """
+    payload = {
+        "title": "Photo avatar raspuns",
+        "video_inputs": [
+            {
+                "character": {
+                    "type": "talking_photo",
+                    "talking_photo_id": talking_photo_id,
+                },
+                "voice": {
+                    "type": "text",
+                    "voice_id": voice_id,
+                    "input_text": text,
+                },
+                "background": {"type": "color", "value": "#000000"},
+            }
+        ],
+        "dimension": {"width": 1280, "height": 720},
+    }
+
+    data = _heygen_post_generate(payload)
+    video_id = (data.get("data") or {}).get("video_id") or data.get("video_id")
+    if not video_id:
+        raise HTTPException(status_code=502, detail=f"Missing video_id in HeyGen response: {data}")
+    return video_id
+
+# def create_heygen_video_from_avatar_id(text: str, avatar_id: str, voice_id: str) -> str:
+#     payload = {
+#         "title": "Avatar raspuns",
+#         "video_inputs": [
+#             {
+#                 "character": {
+#                     "type": "avatar",
+#                     "avatar_id": avatar_id,
+#                     "avatar_style": "normal",
+#                 },
+#                 "voice": {
+#                     "type": "text",
+#                     "voice_id": voice_id,
+#                     "input_text": text,
+#                 },
+#                 "background": {"type": "color", "value": "#000000"},
+#             }
+#         ],
+#         "dimension": {"width": 1280, "height": 720},
+#     }
+#     headers = {"X-Api-Key": HEYGEN_API_KEY, "Content-Type": "application/json", "Accept": "application/json"}
+#     resp = requests.post(HEYGEN_GENERATE_URL, json=payload, headers=headers, timeout=60)
+#     resp.raise_for_status()
+#     data = resp.json()
+#     video_id = data.get("data", {}).get("video_id") or data.get("video_id")
+#     if not video_id:
+#         raise RuntimeError(f"Missing video_id in HeyGen response: {data}")
+#     return video_id
+#
+# def create_heygen_video_from_photo_url(text: str, photo_url: str, voice_id: str) -> str:
+#     """
+#     Solution for \`no avatar_id\`: generate video using a photo/image character.
+#     HeyGen supports image/photo based character inputs in v2 video generate.
+#     """
+#     payload = {
+#         "title": "Photo avatar raspuns",
+#         "video_inputs": [
+#             {
+#                 "character": {
+#                     "type": "photo",
+#                     "photo_url": photo_url,
+#                 },
+#                 "voice": {
+#                     "type": "text",
+#                     "voice_id": voice_id,
+#                     "input_text": text,
+#                 },
+#                 "background": {"type": "color", "value": "#000000"},
+#             }
+#         ],
+#         "dimension": {"width": 1280, "height": 720},
+#     }
+#     headers = {"X-Api-Key": HEYGEN_API_KEY, "Content-Type": "application/json", "Accept": "application/json"}
+#     resp = requests.post(HEYGEN_GENERATE_URL, json=payload, headers=headers, timeout=60)
+#     resp.raise_for_status()
+#     data = resp.json()
+#     video_id = data.get("data", {}).get("video_id") or data.get("video_id")
+#     if not video_id:
+#         raise RuntimeError(f"Missing video_id in HeyGen response: {data}")
+#     return video_id
 
 def get_heygen_status(video_id: str) -> dict:
     headers = {"X-Api-Key": HEYGEN_API_KEY, "Accept": "application/json"}
@@ -460,8 +546,52 @@ def photo_avatar_status(
     )
 
 class PhotoAvatarPickRequest(BaseModel):
-    photo_url: str
+    # keep old field for backwards compat
+    photo_url: Optional[str] = None
     generation_id: str
+    image_key: Optional[str] = None
+    group_id: Optional[str] = None
+
+
+class PhotoAvatarGroupCreateRequest(BaseModel):
+    generation_id: str
+    image_key: str
+    name: Optional[str] = None
+
+
+class PhotoAvatarGroupCreateResponse(BaseModel):
+    group_id: str
+
+
+@app.post("/api/heygen/photo-avatar/avatar-group/create", response_model=PhotoAvatarGroupCreateResponse)
+def photo_avatar_group_create(
+    req: PhotoAvatarGroupCreateRequest,
+    user: str = Depends(get_current_user),
+) -> PhotoAvatarGroupCreateResponse:
+    url = f"{HEYGEN_BASE_URL}/v2/photo_avatar/avatar_group/create"
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "x-api-key": HEYGEN_API_KEY,
+    }
+    payload: Dict[str, Any] = {
+        "generation_id": req.generation_id,
+        "image_key": req.image_key,
+        "name": (req.name or "Gen").strip() or "Gen",
+    }
+
+    resp = requests.post(url, json=payload, headers=headers, timeout=60)
+    if not resp.ok:
+        raise HTTPException(status_code=resp.status_code, detail=resp.text)
+
+    raw = resp.json() or {}
+    data = raw.get("data") or {}
+    group_id = data.get("group_id") or data.get("id")
+    if not group_id:
+        raise HTTPException(status_code=502, detail=f"Unexpected HeyGen response: {raw}")
+
+    return PhotoAvatarGroupCreateResponse(group_id=str(group_id))
+
 
 @app.post("/api/session/photo-avatar")
 def set_photo_avatar(
@@ -470,38 +600,34 @@ def set_photo_avatar(
     user: str = Depends(get_current_user),
 ) -> Dict[str, Any]:
     token_key = _token_key_from_bearer(creds)
-    photo_url = (payload.photo_url or "").strip()
-    if not photo_url:
-        raise HTTPException(status_code=400, detail="photo_url is required.")
     _PHOTO_AVATAR_BY_TOKEN[token_key] = {
-        "photo_url": photo_url,
+        "photo_url": (payload.photo_url or "").strip(),
         "generation_id": payload.generation_id,
+        "image_key": (payload.image_key or "").strip(),
+        "group_id": (payload.group_id or "").strip(),
     }
     return {"ok": True}
-
-@app.get("/api/session/photo-avatar")
-def get_photo_avatar(
-    creds: HTTPAuthorizationCredentials = Depends(security),
-    user: str = Depends(get_current_user),
-) -> Dict[str, Any]:
-    token_key = _token_key_from_bearer(creds)
-    sel = _PHOTO_AVATAR_BY_TOKEN.get(token_key)
-    if not sel:
-        raise HTTPException(status_code=404, detail="No photo avatar stored.")
-    return sel
 
 # --- Existing endpoints (unchanged) ---
 
 @app.post("/questions", response_model=QuestionResponse)
 async def ask_question(
-    avatar_id: str = Form(...),
+    avatar_id: str = Form(""),
+    talking_photo_id: str = Form(""),
     voice_id: str = Form(...),
     audio: UploadFile = File(...),
-    avatar_url: str = Form(...)  ,
-    text: str = Form(...),
+    avatar_url: str = Form(""),
+    text: str = Form(""),
+    creds: HTTPAuthorizationCredentials = Depends(security),
     user: str = Depends(get_current_user),
 ):
-    if not text :
+    avatar_id = (avatar_id or "").strip()
+    talking_photo_id = (talking_photo_id or "").strip()
+    avatar_url = (avatar_url or "").strip()
+    text = (text or "").strip()
+
+    tmp_path: Optional[str] = None
+    if not text:
         try:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
                 content = await audio.read()
@@ -511,19 +637,78 @@ async def ask_question(
             raise HTTPException(status_code=500, detail=f"Failed saving audio: {e}")
 
     try:
-        if not text:
-            student_text = transcribe_audio_file(tmp_path)
-        else :
-            student_text = text
+        student_text = text if text else transcribe_audio_file(tmp_path)  # type: ignore[arg-type]
         tutor_reply = generate_reply_ollama(student_text)
-        if avatar_id:
+
+        # Priority order:
+        # 1) explicit talking_photo_id (photo avatar group id)
+        # 2) explicit avatar_id (stock HeyGen avatar)
+        # 3) legacy avatar_url (talking_photo_url)
+        # 4) session stored group_id (if present)
+        if talking_photo_id:
+            video_id = create_heygen_video_from_talking_photo_id(tutor_reply, talking_photo_id, voice_id)
+        elif avatar_id:
             video_id = create_heygen_video_from_avatar_id(tutor_reply, avatar_id, voice_id)
         elif avatar_url:
             video_id = create_heygen_video_from_photo_url(tutor_reply, avatar_url, voice_id)
+        else:
+            # try session
+            token_key = _token_key_from_bearer(creds)
+            photo_sel = _PHOTO_AVATAR_BY_TOKEN.get(token_key) or {}
+            session_group_id = (photo_sel.get("group_id") or "").strip()
+            session_photo_url = (photo_sel.get("photo_url") or "").strip()
+            if session_group_id:
+                video_id = create_heygen_video_from_talking_photo_id(tutor_reply, session_group_id, voice_id)
+            elif session_photo_url:
+                video_id = create_heygen_video_from_photo_url(tutor_reply, session_photo_url, voice_id)
+            else:
+                raise HTTPException(status_code=400, detail="Missing avatar\_id or talking\_photo\_id.")
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing error ({type(e).__name__}): {e}")
+    finally:
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
 
     return QuestionResponse(job_id=video_id)
+
+# @app.post("/questions", response_model=QuestionResponse)
+# async def ask_question(
+#     avatar_id: str = Form(...),
+#     voice_id: str = Form(...),
+#     audio: UploadFile = File(...),
+#     avatar_url: str = Form(...)  ,
+#     text: str = Form(...),
+#     user: str = Depends(get_current_user),
+# ):
+#     if not text :
+#         try:
+#             with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
+#                 content = await audio.read()
+#                 tmp.write(content)
+#                 tmp_path = tmp.name
+#         except Exception as e:
+#             raise HTTPException(status_code=500, detail=f"Failed saving audio: {e}")
+#
+#     try:
+#         if not text:
+#             student_text = transcribe_audio_file(tmp_path)
+#         else :
+#             student_text = text
+#         tutor_reply = generate_reply_ollama(student_text)
+#         if avatar_id:
+#             video_id = create_heygen_video_from_avatar_id(tutor_reply, avatar_id, voice_id)
+#         elif avatar_url:
+#             video_id = create_heygen_video_from_photo_url(tutor_reply, avatar_url, voice_id)
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Processing error ({type(e).__name__}): {e}")
+#
+#     return QuestionResponse(job_id=video_id)
 
 @app.get("/questions/{job_id}", response_model=QuestionStatusResponse)
 def get_question_status(job_id: str, user: str = Depends(get_current_user)):
@@ -564,21 +749,44 @@ def video_from_chat(
     if not chat_text:
         raise HTTPException(status_code=400, detail="Empty text.")
 
-    # voice comes from existing selection endpoint
     sel = _SELECTION_BY_TOKEN.get(token_key) or {}
     voice_id = ((sel.get("voice") or {}).get("id") or "").strip()
     if not voice_id:
         raise HTTPException(status_code=400, detail="No voice selected.")
 
-    # photo avatar comes from new session store
     photo_sel = _PHOTO_AVATAR_BY_TOKEN.get(token_key)
     if not photo_sel:
         raise HTTPException(status_code=400, detail="No photo avatar selected.")
+
+    reply = generate_reply_ollama(chat_text)
+
+    group_id = (photo_sel.get("group_id") or "").strip()
+    if group_id:
+        video_id = create_heygen_video_from_talking_photo_id(reply, group_id, voice_id)
+        return VideoFromChatResponse(job_id=video_id)
+
     photo_url = (photo_sel.get("photo_url") or "").strip()
     if not photo_url:
         raise HTTPException(status_code=400, detail="Invalid stored photo avatar.")
 
-    reply = generate_reply_ollama(chat_text)
     video_id = create_heygen_video_from_photo_url(reply, photo_url, voice_id)
     return VideoFromChatResponse(job_id=video_id)
 
+def _heygen_post_generate(payload: dict) -> dict:
+    headers = {
+        "X-Api-Key": HEYGEN_API_KEY,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    try:
+        resp = requests.post(HEYGEN_GENERATE_URL, json=payload, headers=headers, timeout=60)
+        if not resp.ok:
+            raise HTTPException(
+                status_code=502,
+                detail=f"HeyGen generate failed: {resp.status_code} {resp.text}",
+            )
+        return resp.json() or {}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"HeyGen generate error: {type(e).__name__}: {e}")

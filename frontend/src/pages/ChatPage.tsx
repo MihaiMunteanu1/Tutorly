@@ -1,9 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getJobStatus, uploadQuestion } from "../api";
-
-const API_URL = "http://localhost:8000";
 
 const TRANSLATIONS = {
   ro: {
@@ -163,8 +161,16 @@ export function ChatPage() {
 
     try {
       const blobToSend = currentBlob || new Blob([finalMsg], { type: 'text/plain' });
-      const { job_id } = await uploadQuestion(token,voice.id,blobToSend,inputText, avatar.id,avatar.image_url);
-
+        const { job_id } = await uploadQuestion(
+          token,
+          voice.id,
+          blobToSend,
+          finalMsg,
+          avatar?.avatar_type === "avatar" ? (avatar?.id || "") : "",
+          // legacy url fallback (kept, but not required for talking_photo_id flow)
+          avatar?.image_url,
+          avatar?.avatar_type === "talking_photo" ? (avatar?.id || "") : ""
+        );
       const interval = setInterval(async () => {
         const res = await getJobStatus(token, job_id);
         if (res.status === "completed" && res.video_url) {
@@ -310,3 +316,4 @@ const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 10px'
 const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#fff", padding: "8px", borderRadius: "10px", cursor: 'pointer', display: 'flex', alignItems: 'center' };
 
 export default ChatPage;
+

@@ -5,7 +5,7 @@ import { useAuth } from "../auth/AuthContext";
 const API_URL = "http://localhost:8000";
 
 // --- Types ---
-type AvatarSelection = { id: string; name: string; image_url?: string };
+type AvatarSelection = { id: string; name: string; image_url?: string; avatar_type?: "avatar" | "talking_photo" };
 type VoiceSelection = { id: string; name: string };
 type AuthContextShape = {
   token: string | null;
@@ -150,7 +150,12 @@ export function SubjectAvatarsPage() {
 
   const onPickPreset = (p: Preset) => {
     const preview = previewByKey[p.key];
-    setAvatar({ id: p.avatarId, name: preview?.name ?? p.avatarName, image_url: preview?.imageUrl ?? "" });
+    setAvatar({
+      id: p.avatarId,
+      name: preview?.name ?? p.avatarName,
+      image_url: preview?.imageUrl ?? "",
+      avatar_type: "avatar",
+    });
     setVoice({ id: p.voiceId, name: p.voiceName });
     navigate("/chat");
   };
@@ -300,7 +305,25 @@ const disciplineBadgeSmall: React.CSSProperties = { fontSize: "14px", fontWeight
 const cardHeaderStyle: React.CSSProperties = { fontSize: "32px", fontWeight: 700, color: "#f5f5f7", margin: "0 0 16px 0", lineHeight: 1.1 };
 const cardDescriptionStyle: React.CSSProperties = { fontSize: "17px", color: "#a1a1a6", lineHeight: "1.7", margin: "0 0 44px 0" };
 const startBtnStyle: React.CSSProperties = { padding: "16px 36px", borderRadius: "100px", background: "#3572ef", color: "#fff", border: "none", fontWeight: 700, fontSize: "16px", cursor: "pointer", boxShadow: "0 10px 25px rgba(53, 114, 239, 0.3)" };
-const refinedArrowBtn: React.CSSProperties = { position: "absolute", top: "calc(50% - 40px)", transform: "translateY(-50%)", zIndex: 100, width: "70px", height: "70px", borderRadius: "50%", border: "1px solid rgba(255, 255, 255, 0.18)", background: "rgba(255, 255, 255, 0.08)", backdropFilter: "blur(15px)", color: "white", cursor: "pointer", fontSize: "26px", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)" };
+const refinedArrowBtn: React.CSSProperties = {
+  position: "absolute",
+  top: "calc(50% - 40px)",
+  transform: "translateY(-50%)",
+  zIndex: 100,
+  width: "70px",
+  height: "70px",
+  borderRadius: "50%",
+  border: "1px solid rgba(255, 255, 255, 0.18)",
+  background: "rgba(255, 255, 255, 0.08)",
+  backdropFilter: "blur(15px)",
+  color: "white",
+  cursor: "pointer",
+  fontSize: "26px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+};
 const refinedBackBtn: React.CSSProperties = { height: "56px", padding: "0 40px", borderRadius: "100px", fontWeight: 700, fontSize: "16px", border: "1px solid rgba(255,255,255,0.2)", cursor: 'pointer', color: '#fff', background: 'transparent' };
 const specialVisualArea: React.CSSProperties = { height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "28px", background: "#1c1c1e" };
 const refinedIconCircle: React.CSSProperties = { width: "110px", height: "110px", borderRadius: "50%", background: "linear-gradient(135deg, #3572ef, #5e5ce6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "48px", boxShadow: "0 25px 50px rgba(53, 114, 239, 0.4)" };
@@ -315,3 +338,4 @@ const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px'
 const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#ffffff", padding: "8px", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" };
 
 export default SubjectAvatarsPage;
+

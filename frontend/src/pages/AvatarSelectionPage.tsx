@@ -60,7 +60,7 @@ export function AvatarSelectionPage() {
   }, [token, navigate, t.error]);
 
   const handleSelect = (av: Avatar) => {
-    setAvatar(av);
+    setAvatar({ ...av, avatar_type: "avatar" });
     navigate("/voices");
   };
 

@@ -1,5 +1,3 @@
-
-
 const API_URL = "http://localhost:8000";
 
 export type Avatar = {
@@ -8,6 +6,7 @@ export type Avatar = {
   image_url?: string | null;
   preview_video_url?: string | null;
   gender?: string | null;
+  avatar_type?: "avatar" | "talking_photo";
 };
 
 export type Voice = {
@@ -85,12 +84,14 @@ export async function uploadQuestion(
   audioBlob?: Blob,
   text?: string,
   avatarId?: string,
-  avatar_url?: string
+  avatar_url?: string,
+  talkingPhotoId?: string
 ) {
   const formData = new FormData();
   formData.append("avatar_id", avatarId || "");
+  formData.append("talking_photo_id", talkingPhotoId || "");
   formData.append("voice_id", voiceId);
-  formData.append("audio", audioBlob, "question.webm");
+  formData.append("audio", audioBlob ?? new Blob([], { type: "application/octet-stream" }), "question.webm");
   formData.append("avatar_url", avatar_url || "");
   formData.append("text", text || "");
 

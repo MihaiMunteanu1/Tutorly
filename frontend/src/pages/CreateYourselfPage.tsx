@@ -1,10 +1,66 @@
+// Conversational-Avatar/ProjectWithHeyGen/frontend/src/pages/CreateYourselfPage.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 const API_URL = "http://localhost:8000";
 
+type AuthAvatar = {
+  id: string;
+  name?: string;
+  image_url?: string | null;
+  avatar_type?: "avatar" | "talking_photo";
+};
 
+type AuthShape = {
+  token: string | null;
+  setToken: (t: string | null) => void;
+  setAvatar: (a: AuthAvatar) => void;
+};
+
+type GenerateReq = {
+  name: string;
+  age: string;
+  gender: string;
+  ethnicity: string;
+  orientation: string;
+  pose: string;
+  style: string;
+  appearance: string;
+};
+
+type GenerateRes = { generation_id: string };
+
+type StatusRes = {
+  id: string;
+  status: string;
+  msg?: string | null;
+  image_url_list: string[];
+  image_key_list?: string[];
+};
+
+type CreateGroupReq = {
+  generation_id: string;
+  image_key: string;
+  name: string;
+};
+
+type CreateGroupRes = {
+  group_id: string;
+  id?: string;
+  image_url?: string;
+  name?: string;
+  status?: string;
+};
+
+function toErrorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  return String(e);
+}
+
+function sleep(ms: number) {
+  return new Promise<void>((r) => setTimeout(r, ms));
+}
 
 // --- Translation Dictionary ---
 const TRANSLATIONS = {
@@ -27,7 +83,12 @@ const TRANSLATIONS = {
     processing: "Aproape gata...",
     settings: "Setări",
     languageLabel: "Limbă",
-    logout: "Deconectare"
+    logout: "Deconectare",
+    orientationLabel: "Orientare",
+    poseLabel: "Poză",
+    statusLabel: "Status",
+    noImages: "Nu există imagini încă.",
+    pickMain: "Alege imaginea principală:",
   },
   en: {
     title: "Avatar Studio",
@@ -48,36 +109,76 @@ const TRANSLATIONS = {
     processing: "Almost done...",
     settings: "Settings",
     languageLabel: "Language",
-    logout: "Logout"
-  }
+    logout: "Logout",
+    orientationLabel: "Orientation",
+    poseLabel: "Pose",
+    statusLabel: "Status",
+    noImages: "No images yet.",
+    pickMain: "Pick a main image:",
+  },
 };
-
 
 export function CreateYourselfPage() {
   const navigate = useNavigate();
-  // Added setToken for logout logic
   const { token, setToken, setAvatar } = useAuth() as unknown as AuthShape;
 
-  const AGE_OPTIONS = ["Young Adult", "Early Middle Age", "Late Middle Age", "Senior", "Unspecified"];
-  const GENDER_OPTIONS = ["Man", "Woman", "Unspecified"];
-  const ETHNICITY_OPTIONS = ["White", "Black", "Asian American", "East Asian", "South East Asian", "South Asian", "Middle Eastern", "Pacific", "Hispanic", "Unspecified"];
-  const STYLE_OPTIONS = ["Realistic", "Pixar", "Cinematic", "Vintage", "Noir", "Cyberpunk", "Unspecified"];
+  const AGE_OPTIONS = ["Young Adult", "Early Middle Age", "Late Middle Age", "Senior", "Unspecified"] as const;
+  const GENDER_OPTIONS = ["Man", "Woman", "Unspecified"] as const;
+  const ETHNICITY_OPTIONS = [
+    "White",
+    "Black",
+    "Asian American",
+    "East Asian",
+    "South East Asian",
+    "South Asian",
+    "Middle Eastern",
+    "Pacific",
+    "Hispanic",
+    "Unspecified",
+  ] as const;
+  const ORIENTATION_OPTIONS = ["square", "horizontal", "vertical"] as const;
+  const POSE_OPTIONS = ["half_body", "close_up", "full_body"] as const;
+  const STYLE_OPTIONS = ["Realistic", "Pixar", "Cinematic", "Vintage", "Noir", "Cyberpunk", "Unspecified"] as const;
 
-  const [form, setForm] = useState({
-    name: "", age: "Young Adult", gender: "Man", ethnicity: "White", orientation: "vertical", pose: "close_up", style: "Realistic", appearance: "",
+  const [form, setForm] = useState<GenerateReq>({
+    name: "",
+    age: "Young Adult",
+    gender: "Man",
+    ethnicity: "White",
+    orientation: "square",
+    pose: "half_body",
+    style: "Realistic",
+    appearance: "",
   });
 
+  const [generationId, setGenerationId] = useState<string | null>(null);
+
+  const [status, setStatus] = useState<string | null>(null);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
   const [images, setImages] = useState<string[]>([]);
+  const [imageKeys, setImageKeys] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  const [lang, setLang] = useState<'ro' | 'en'>('ro');
+
+  const [busyGenerate, setBusyGenerate] = useState(false);
+  const [busySave, setBusySave] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const [lang, setLang] = useState<"ro" | "en">("ro");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const t = TRANSLATIONS[lang];
-  const mainImage = useMemo(() => selected ?? images[0] ?? null, [selected, images]);
 
-  useEffect(() => { if (!token) navigate("/login"); }, [token, navigate]);
+  const mainImage = useMemo(() => selected ?? images[0] ?? null, [selected, images]);
+  const mainImageKey = useMemo(() => {
+    if (!mainImage) return null;
+    const idx = images.findIndex((u) => u === mainImage);
+    if (idx < 0) return null;
+    return imageKeys[idx] ?? null;
+  }, [mainImage, images, imageKeys]);
+
+  useEffect(() => {
+    if (!token) navigate("/login");
+  }, [token, navigate]);
 
   const handleLogout = () => {
     setToken(null);
@@ -85,177 +186,450 @@ export function CreateYourselfPage() {
   };
 
   async function startGeneration() {
-    setBusy(true);
-    setIsReady(false);
-    await new Promise(r => setTimeout(r, 3000));
+    if (!token) return;
 
-    const mockImages = [
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800",
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800",
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800",
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800"
-    ];
+    setErr(null);
+    setBusyGenerate(true);
 
-    setImages(mockImages);
-    setBusy(false);
-    setIsReady(true);
+    setImages([]);
+    setImageKeys([]);
+    setSelected(null);
+    setGenerationId(null);
+    setStatus(null);
+    setStatusMsg(null);
+
+    try {
+      const res = await fetch(`${API_URL}/api/heygen/photo-avatar/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`Generate failed: ${res.status} ${res.statusText} ${txt}`.trim());
+      }
+
+      const gen = (await res.json()) as GenerateRes;
+      setGenerationId(gen.generation_id);
+
+      for (let i = 0; i < 90; i += 1) {
+        const sres = await fetch(
+          `${API_URL}/api/heygen/photo-avatar/status/${encodeURIComponent(gen.generation_id)}`,
+          {
+            method: "GET",
+            headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (!sres.ok) {
+          const txt = await sres.text().catch(() => "");
+          throw new Error(`Status failed: ${sres.status} ${sres.statusText} ${txt}`.trim());
+        }
+
+        const st = (await sres.json()) as StatusRes;
+        setStatus(st.status ?? "unknown");
+        setStatusMsg(st.msg ?? null);
+
+        if (st.status === "success") {
+          const urls = (st.image_url_list ?? []).filter(Boolean);
+          const keys = (st.image_key_list ?? []).filter(Boolean);
+
+          setImages(urls);
+          setImageKeys(keys);
+
+          setSelected(urls[0] ?? null);
+          return;
+        }
+
+        if (st.status === "failed") {
+          throw new Error(st.msg ?? "Generation failed.");
+        }
+
+        await sleep(1500);
+      }
+
+      throw new Error("Timed out waiting for generation.");
+    } catch (e: unknown) {
+      setErr(toErrorMessage(e));
+    } finally {
+      setBusyGenerate(false);
+    }
   }
 
-  function onSaveAvatar() {
-  if (!mainImage) {
-    alert("Please select an image before saving.");
-    return;
+  async function saveAndContinue() {
+    if (!token) return;
+    if (!generationId || !mainImage || !mainImageKey) {
+      setErr("Missing generation\\_id, selected image, or image\\_key.");
+      return;
+    }
+
+    setErr(null);
+    setBusySave(true);
+
+    try {
+      // 1) Create HeyGen avatar group (this returns the group_id aka talking_photo_id)
+      const groupName = (form.name || "Gen1").slice(0, 64);
+
+      const res2 = await fetch(`${API_URL}/api/heygen/photo-avatar/avatar-group/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          generation_id: generationId,
+          image_key: mainImageKey,
+          name: groupName,
+        } satisfies CreateGroupReq),
+      });
+
+      if (!res2.ok) {
+        const txt = await res2.text().catch(() => "");
+        throw new Error(`Create group failed: ${res2.status} ${res2.statusText} ${txt}`.trim());
+      }
+
+      const group = (await res2.json()) as CreateGroupRes;
+      const groupId = group.group_id || group.id;
+      if (!groupId) throw new Error("Missing group\\_id in create group response.");
+
+      // 2) Store the chosen photo avatar in the backend session (generation_id + image_key + group_id)
+      {
+        const res = await fetch(`${API_URL}/api/session/photo-avatar`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            generation_id: generationId,
+            photo_url: mainImage,
+            image_key: mainImageKey,
+            group_id: groupId,
+          }),
+        });
+
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          throw new Error(`Save session failed: ${res.status} ${res.statusText} ${txt}`.trim());
+        }
+      }
+
+      // 3) Store avatar in AuthContext, using group_id as avatar id (this is the talking_photo_id)
+      setAvatar({
+        id: groupId,
+        name: form.name || "My avatar",
+        image_url: mainImage,
+        avatar_type: "talking_photo",
+      });
+
+      navigate("/voices");
+    } catch (e: unknown) {
+      setErr(toErrorMessage(e));
+    } finally {
+      setBusySave(false);
+    }
   }
-
-  setAvatar({
-    name: form?.name || "Custom Avatar",
-    image_url: mainImage,
-  });
-
-  navigate("/voices");
-}
 
   return (
     <div style={pageWrapper}>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+        rel="stylesheet"
+      />
+
       <style>{`
-        * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-        .studio-container { width: 100%; display: flex; flex-direction: column; align-items: center; padding-bottom: 100px; }
-        .flip-container { perspective: 2000px; width: 550px; height: 850px; z-index: 1; }
-        .flip-inner { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
-        .flip-inner.flipped { transform: rotateY(180deg); }
-        .flip-front, .flip-back { position: absolute; top: 0; left: 0; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 48px; overflow: hidden; box-sizing: border-box; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5); }
-        .flip-front { background: rgba(28, 28, 30, 0.9); backdrop-filter: blur(40px); padding: 50px; display: flex; flex-direction: column; gap: 24px; }
-        .flip-back { transform: rotateY(180deg); background: rgba(28, 28, 30, 0.98); backdrop-filter: blur(40px); padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .input-row { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-        .input-row label { font-size: 13px; font-weight: 700; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.1em; margin-left: 4px; }
-        .custom-field { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 16px 20px; color: white; outline: none; transition: 0.3s; font-size: 15px; width: 100%; }
-        .custom-field option { background-color: #1c1c1e; color: white; }
-        .custom-field:focus { border-color: #3572ef; background: rgba(53, 114, 239, 0.08); }
-        .preview-stage { width: 100%; max-width: 380px; aspect-ratio: 4/5.5; border-radius: 32px; overflow: hidden; background: #000; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 24px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .ring-spinner { width: 50px; height: 50px; border: 4px solid rgba(53, 114, 239, 0.1); border-top: 4px solid #3572ef; border-radius: 50%; animation: spin 1s linear infinite; }
-        .gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 380px; }
-        .gallery-thumb { aspect-ratio: 1/1; border-radius: 12px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: 0.3s; }
-        .gallery-thumb.active { border-color: #3572ef; transform: scale(1.05); }
-        .loading-overlay { position: absolute; inset: 0; background: rgba(28, 28, 30, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        .logout-btn:hover { background: rgba(255, 255, 255, 0.2) !important; border-color: rgba(255, 255, 255, 0.4) !important; transform: scale(1.05); }
+        * { font-family: 'Inter', -apple-system, sans-serif; box-sizing: border-box; }
       `}</style>
 
-      <div style={centeredHeaderLayout}>
-        <h1 style={titleTypography}>{t.title}</h1>
-        <p style={subtitleTypography}>{t.subtitle}</p>
+      <div style={headerWrapper}>
+        <div style={headerText}>
+          <h1 style={titleTypography}>{t.title}</h1>
+          <p style={subtitleTypography}>{t.subtitle}</p>
+        </div>
+        <button onClick={() => navigate("/mode")} style={slickBackBtn}>
+          {t.back}
+        </button>
       </div>
 
-      <div className="studio-container">
-        <div className="flip-container">
-          <div className={`flip-inner ${isReady ? 'flipped' : ''}`}>
-            <div className="flip-front">
-              {busy && (
-                <div className="loading-overlay">
-                    <div className="ring-spinner" />
-                    <span style={{ color: '#fff', marginTop: '20px', fontWeight: 600 }}>{t.processing}</span>
-                </div>
-              )}
-              <div className="input-row">
-                <label>{t.nameLabel}</label>
-                <input className="custom-field" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Ex: Andrei" />
+      <div style={{ width: "100%", maxWidth: 1200, display: "grid", gridTemplateColumns: "420px 1fr", gap: 20 }}>
+        <div style={panelLeft}>
+          <div style={formGrid}>
+            <label style={labelStyle}>
+              {t.nameLabel}
+              <input
+                value={form.name}
+                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                style={inputStyle}
+                placeholder="e.g. John"
+              />
+            </label>
+
+            <label style={labelStyle}>
+              {t.ageLabel}
+              <select value={form.age} onChange={(e) => setForm((p) => ({ ...p, age: e.target.value }))} style={inputStyle}>
+                {AGE_OPTIONS.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+
+            <label style={labelStyle}>
+              {t.genderLabel}
+              <select value={form.gender} onChange={(e) => setForm((p) => ({ ...p, gender: e.target.value }))} style={inputStyle}>
+                {GENDER_OPTIONS.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+
+            <label style={labelStyle}>
+              {t.ethnicityLabel}
+              <select value={form.ethnicity} onChange={(e) => setForm((p) => ({ ...p, ethnicity: e.target.value }))} style={inputStyle}>
+                {ETHNICITY_OPTIONS.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+
+            <label style={labelStyle}>
+              {t.orientationLabel}
+              <select
+                value={form.orientation}
+                onChange={(e) => setForm((p) => ({ ...p, orientation: e.target.value }))}
+                style={inputStyle}
+              >
+                {ORIENTATION_OPTIONS.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+
+            <label style={labelStyle}>
+              {t.poseLabel}
+              <select value={form.pose} onChange={(e) => setForm((p) => ({ ...p, pose: e.target.value }))} style={inputStyle}>
+                {POSE_OPTIONS.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+
+            <label style={labelStyle}>
+              {t.styleLabel}
+              <select value={form.style} onChange={(e) => setForm((p) => ({ ...p, style: e.target.value }))} style={inputStyle}>
+                {STYLE_OPTIONS.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+
+            <label style={labelStyle}>
+              {t.promptLabel}
+              <input
+                value={form.appearance}
+                onChange={(e) => setForm((p) => ({ ...p, appearance: e.target.value }))}
+                style={inputStyle}
+                placeholder="e.g. friendly, teacher, studio lighting"
+              />
+            </label>
+
+            <button onClick={() => void startGeneration()} disabled={busyGenerate || busySave} style={primaryBtn}>
+              {busyGenerate ? t.generating : t.generate}
+            </button>
+
+            <button
+              onClick={() => void saveAndContinue()}
+              disabled={!generationId || !mainImage || !mainImageKey || busyGenerate || busySave}
+              style={secondaryBtn}
+            >
+              {busySave ? t.processing : t.save}
+            </button>
+
+            {err ? <div style={errorBox}>{err}</div> : null}
+
+            {status ? (
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
+                {t.statusLabel}: {status}
+                {statusMsg ? ` \u2014 ${statusMsg}` : ""}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <div className="input-row">
-                  <label>{t.ageLabel}</label>
-                  <select className="custom-field" value={form.age} onChange={e => setForm(p => ({ ...p, age: e.target.value }))}>
-                    {AGE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-                <div className="input-row">
-                  <label>{t.genderLabel}</label>
-                  <select className="custom-field" value={form.gender} onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}>
-                    {GENDER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="input-row">
-                <label>{t.ethnicityLabel}</label>
-                <select className="custom-field" value={form.ethnicity} onChange={e => setForm(p => ({ ...p, ethnicity: e.target.value }))}>
-                  {ETHNICITY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                </select>
-              </div>
-              <div className="input-row">
-                <label>{t.styleLabel}</label>
-                <select className="custom-field" value={form.style} onChange={e => setForm(p => ({ ...p, style: e.target.value }))}>
-                  {STYLE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                </select>
-              </div>
-              <div className="input-row">
-                <label>{t.promptLabel}</label>
-                <textarea className="custom-field" style={{ height: '100px', resize: 'none', lineHeight: '1.5' }} value={form.appearance} onChange={e => setForm(p => ({ ...p, appearance: e.target.value }))} placeholder="Ex: Păr șaten..." />
-              </div>
-              <button className="button-primary" style={{ ...actionBtn, background: '#3572ef', marginTop: 'auto' }} onClick={startGeneration} disabled={busy}>{busy ? t.generating : t.generate}</button>
+            ) : null}
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "space-between", marginTop: 10 }}>
+              <button onClick={() => setSettingsOpen((p) => !p)} style={smallBtn}>
+                {t.settings}
+              </button>
+              <button onClick={handleLogout} style={{ ...smallBtn, borderColor: "rgba(255,69,58,0.35)", color: "#ff453a" }}>
+                {t.logout}
+              </button>
             </div>
 
-            <div className="flip-back">
-              <div style={{ marginBottom: '20px', fontSize: '13px', fontWeight: 800, color: '#3572ef', textTransform: 'uppercase', letterSpacing: '0.2em' }}>{t.previewTitle}</div>
-              <div className="preview-stage"><img src={mainImage!} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Avatar" /></div>
-              <div className="gallery-grid">
-                {images.map(img => (
-                  <div key={img} className={`gallery-thumb ${selected === img ? 'active' : ''}`} onClick={() => setSelected(img)}><img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Option" /></div>
-                ))}
+            {settingsOpen ? (
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setLang("ro")} style={lang === "ro" ? langActiveBtn : langBtn}>RO</button>
+                <button onClick={() => setLang("en")} style={lang === "en" ? langActiveBtn : langBtn}>EN</button>
               </div>
-              <div style={{ display: 'flex', gap: '15px', width: '100%', maxWidth: '380px', marginTop: '30px' }}>
-                  <button className="button-secondary" style={{ flex: 1, height: '56px', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', background: 'transparent', borderRadius: '16px' }} onClick={() => { setIsReady(false); setImages([]); }}>{t.back}</button>
-                  <button className="button-primary" style={{ flex: 2, height: '56px', background: '#34c759', borderRadius: '16px', border: 'none', color: '#fff', fontWeight: 700 }} onClick={() => onSaveAvatar()}>{t.save}</button>
-              </div>
-            </div>
+            ) : null}
           </div>
         </div>
-        <button className="button-secondary" onClick={() => navigate("/mode")} style={{ ...refinedBackBtn, marginTop: '40px' }}>{t.back}</button>
-      </div>
 
-      {/* SETTINGS HUB WITH LOGOUT */}
-      <div style={settingsContainer}>
-        {settingsOpen && (
-          <div style={settingsMenu}>
-            <div style={settingsMenuHeader}>{t.settings}</div>
-            <div style={settingsRow}>
-              <span>{t.languageLabel}</span>
-              <div style={toggleGroup}>
-                <button onClick={() => setLang('ro')} style={{ ...langToggleBtn, background: lang === 'ro' ? '#3572ef' : 'transparent', color: '#fff' }}>RO</button>
-                <button onClick={() => setLang('en')} style={{ ...langToggleBtn, background: lang === 'en' ? '#3572ef' : 'transparent', color: '#fff' }}>EN</button>
-              </div>
-            </div>
-            <div style={{ ...settingsRow, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px', marginTop: '4px' }}>
-                <span style={{ color: '#ff453a' }}>{t.logout}</span>
-                <button className="logout-btn" onClick={handleLogout} style={logoutActionBtn}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M16 17L21 12L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-            </div>
+        <div style={panelRight}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 10 }}>
+            {mainImage ? t.pickMain : t.noImages}
           </div>
-        )}
-        <button onClick={() => setSettingsOpen(!settingsOpen)} style={settingsFab}>{settingsOpen ? '✕' : '⚙'}</button>
+
+          {mainImage ? (
+            <>
+              <div style={bigPreview}>
+                <img src={mainImage} alt="Generated avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+
+              <div style={thumbGrid}>
+                {images.slice(0, 4).map((u) => (
+                  <button
+                    key={u}
+                    onClick={() => setSelected(u)}
+                    style={{
+                      padding: 0,
+                      borderRadius: 14,
+                      overflow: "hidden",
+                      border: u === mainImage ? "2px solid #3572ef" : "1px solid rgba(255,255,255,0.12)",
+                      background: "rgba(255,255,255,0.03)",
+                      cursor: "pointer",
+                      height: 92,
+                    }}
+                    title="Select"
+                  >
+                    <img src={u} alt="Option" style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" />
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{t.noImages}</div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-// --- Style Variables ---
-const pageWrapper: React.CSSProperties = { minHeight: "100vh", width: "100%", background: "radial-gradient(circle at top, #1e293b 0, #020617 55%)", padding: "60px 40px", display: 'flex', flexDirection: 'column', alignItems: 'center' };
-const centeredHeaderLayout: React.CSSProperties = { width: '100%', maxWidth: '800px', textAlign: "center", marginBottom: "40px" };
-const titleTypography: React.CSSProperties = { fontSize: "52px", fontWeight: 800, letterSpacing: "-0.05em", margin: 0, color: "#ffffff" };
-const subtitleTypography: React.CSSProperties = { fontSize: "20px", color: "#8e8e93", marginTop: "12px" };
-const refinedBackBtn: React.CSSProperties = { height: "56px", padding: "0 40px", borderRadius: "100px", fontWeight: 700, fontSize: "16px", border: "1px solid rgba(255,255,255,0.2)", cursor: 'pointer', color: '#fff', background: 'transparent' };
-const actionBtn: React.CSSProperties = { height: '64px', borderRadius: '16px', color: "#fff", border: "none", fontWeight: 700, fontSize: "18px", cursor: "pointer", boxShadow: "0 10px 25px rgba(53, 114, 239, 0.3)" };
-const settingsContainer: React.CSSProperties = { position: 'fixed', bottom: '40px', right: '40px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '15px' };
-const settingsFab: React.CSSProperties = { width: '56px', height: '56px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(25, 25, 25, 0.8)', color: '#fff', backdropFilter: 'blur(10px)', cursor: 'pointer', fontSize: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' };
-const settingsMenu: React.CSSProperties = { width: '240px', padding: '20px', borderRadius: '24px', background: 'rgba(28, 28, 30, 0.95)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)', color: '#fff', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' };
-const settingsMenuHeader: React.CSSProperties = { fontSize: '16px', fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' };
-const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', fontWeight: 600 };
-const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '2px' };
-const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 0.2s' };
-const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#ffffff", padding: "8px", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" };
+// Minimal styles (kept simple to avoid breaking existing layout)
+const pageWrapper: React.CSSProperties = {
+  minHeight: "100vh",
+  width: "100%",
+  background: "radial-gradient(circle at top, #1e293b 0, #020617 55%)",
+  padding: "60px 40px",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+};
+const headerWrapper: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  width: "100%",
+  maxWidth: "1200px",
+  marginBottom: "24px",
+};
+const headerText: React.CSSProperties = { textAlign: "left", flex: 1 };
+const titleTypography: React.CSSProperties = { fontSize: "42px", fontWeight: 800, margin: 0, color: "#ffffff" };
+const subtitleTypography: React.CSSProperties = { fontSize: "16px", color: "rgba(255,255,255,0.6)", marginTop: 8, lineHeight: 1.5, maxWidth: 720 };
+const slickBackBtn: React.CSSProperties = {
+  background: "rgba(255, 255, 255, 0.08)",
+  backdropFilter: "blur(12px)",
+  border: "1px solid rgba(255, 255, 255, 0.15)",
+  color: "#ffffff",
+  padding: "12px 18px",
+  borderRadius: 999,
+  fontSize: 14,
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const panelLeft: React.CSSProperties = {
+  border: "1px solid rgba(255,255,255,0.10)",
+  borderRadius: 22,
+  padding: 18,
+  background: "rgba(28, 28, 30, 0.70)",
+  backdropFilter: "blur(24px)",
+};
+const panelRight: React.CSSProperties = {
+  border: "1px solid rgba(255,255,255,0.10)",
+  borderRadius: 22,
+  padding: 18,
+  background: "rgba(28, 28, 30, 0.35)",
+  backdropFilter: "blur(24px)",
+  minHeight: 520,
+};
+
+const formGrid: React.CSSProperties = { display: "grid", gap: 10 };
+const labelStyle: React.CSSProperties = { display: "grid", gap: 6, fontSize: 12, color: "rgba(255,255,255,0.75)", fontWeight: 700 };
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "10px 12px",
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(0,0,0,0.25)",
+  color: "white",
+  outline: "none",
+};
+
+const primaryBtn: React.CSSProperties = {
+  padding: "12px 14px",
+  borderRadius: 14,
+  border: "1px solid rgba(53,114,239,0.55)",
+  background: "#3572ef",
+  color: "white",
+  fontWeight: 800,
+  cursor: "pointer",
+};
+const secondaryBtn: React.CSSProperties = {
+  padding: "12px 14px",
+  borderRadius: 14,
+  border: "1px solid rgba(255,255,255,0.18)",
+  background: "rgba(255,255,255,0.06)",
+  color: "white",
+  fontWeight: 800,
+  cursor: "pointer",
+};
+const smallBtn: React.CSSProperties = {
+  padding: "10px 12px",
+  borderRadius: 14,
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "rgba(255,255,255,0.05)",
+  color: "white",
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
+const langBtn: React.CSSProperties = {
+  flex: 1,
+  padding: "10px 12px",
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "transparent",
+  color: "white",
+  fontWeight: 800,
+  cursor: "pointer",
+};
+const langActiveBtn: React.CSSProperties = { ...langBtn, background: "#3572ef", borderColor: "#3572ef" };
+
+const errorBox: React.CSSProperties = { fontSize: 12, color: "#fca5a5", whiteSpace: "pre-wrap" };
+
+const bigPreview: React.CSSProperties = {
+  width: "100%",
+  height: 420,
+  borderRadius: 18,
+  overflow: "hidden",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(0,0,0,0.35)",
+};
+const thumbGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 12 };
 
 export default CreateYourselfPage;
