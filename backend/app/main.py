@@ -497,20 +497,29 @@ async def ask_question(
     avatar_id: str = Form(...),
     voice_id: str = Form(...),
     audio: UploadFile = File(...),
+    avatar_url: str = Form(...)  ,
+    text: str = Form(...),
     user: str = Depends(get_current_user),
 ):
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
-            content = await audio.read()
-            tmp.write(content)
-            tmp_path = tmp.name
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed saving audio: {e}")
+    if not text :
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
+                content = await audio.read()
+                tmp.write(content)
+                tmp_path = tmp.name
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed saving audio: {e}")
 
     try:
-        student_text = transcribe_audio_file(tmp_path)
+        if not text:
+            student_text = transcribe_audio_file(tmp_path)
+        else :
+            student_text = text
         tutor_reply = generate_reply_ollama(student_text)
-        video_id = create_heygen_video_from_avatar_id(tutor_reply, avatar_id, voice_id)
+        if avatar_id:
+            video_id = create_heygen_video_from_avatar_id(tutor_reply, avatar_id, voice_id)
+        elif avatar_url:
+            video_id = create_heygen_video_from_photo_url(tutor_reply, avatar_url, voice_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing error ({type(e).__name__}): {e}")
 

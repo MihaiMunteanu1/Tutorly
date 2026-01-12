@@ -163,7 +163,7 @@ export function ChatPage() {
 
     try {
       const blobToSend = currentBlob || new Blob([finalMsg], { type: 'text/plain' });
-      const { job_id } = await uploadQuestion(token, avatar.id, voice.id, blobToSend);
+      const { job_id } = await uploadQuestion(token,voice.id,blobToSend,inputText, avatar.id,avatar.image_url);
 
       const interval = setInterval(async () => {
         const res = await getJobStatus(token, job_id);

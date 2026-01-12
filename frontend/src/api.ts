@@ -81,14 +81,18 @@ export async function getHeygenAvatarsByGroup(
 
 export async function uploadQuestion(
   token: string,
-  avatarId: string,
   voiceId: string,
-  audioBlob: Blob
+  audioBlob?: Blob,
+  text?: string,
+  avatarId?: string,
+  avatar_url?: string
 ) {
   const formData = new FormData();
-  formData.append("avatar_id", avatarId);
+  formData.append("avatar_id", avatarId || "");
   formData.append("voice_id", voiceId);
   formData.append("audio", audioBlob, "question.webm");
+  formData.append("avatar_url", avatar_url || "");
+  formData.append("text", text || "");
 
   const res = await fetch(`${API_URL}/questions`, {
     method: "POST",

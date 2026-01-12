@@ -4,6 +4,8 @@ import { useAuth } from "../auth/AuthContext";
 
 const API_URL = "http://localhost:8000";
 
+
+
 // --- Translation Dictionary ---
 const TRANSLATIONS = {
   ro: {
@@ -50,12 +52,11 @@ const TRANSLATIONS = {
   }
 };
 
-type AuthShape = { token: string | null; setToken: (t: string | null) => void };
 
 export function CreateYourselfPage() {
   const navigate = useNavigate();
   // Added setToken for logout logic
-  const { token, setToken } = useAuth() as unknown as AuthShape;
+  const { token, setToken, setAvatar } = useAuth() as unknown as AuthShape;
 
   const AGE_OPTIONS = ["Young Adult", "Early Middle Age", "Late Middle Age", "Senior", "Unspecified"];
   const GENDER_OPTIONS = ["Man", "Woman", "Unspecified"];
@@ -66,13 +67,13 @@ export function CreateYourselfPage() {
     name: "", age: "Young Adult", gender: "Man", ethnicity: "White", orientation: "vertical", pose: "close_up", style: "Realistic", appearance: "",
   });
 
+
   const [images, setImages] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [lang, setLang] = useState<'ro' | 'en'>('ro');
   const [settingsOpen, setSettingsOpen] = useState(false);
-
   const t = TRANSLATIONS[lang];
   const mainImage = useMemo(() => selected ?? images[0] ?? null, [selected, images]);
 
@@ -99,6 +100,20 @@ export function CreateYourselfPage() {
     setBusy(false);
     setIsReady(true);
   }
+
+  function onSaveAvatar() {
+  if (!mainImage) {
+    alert("Please select an image before saving.");
+    return;
+  }
+
+  setAvatar({
+    name: form?.name || "Custom Avatar",
+    image_url: mainImage,
+  });
+
+  navigate("/voices");
+}
 
   return (
     <div style={pageWrapper}>
@@ -189,7 +204,7 @@ export function CreateYourselfPage() {
               </div>
               <div style={{ display: 'flex', gap: '15px', width: '100%', maxWidth: '380px', marginTop: '30px' }}>
                   <button className="button-secondary" style={{ flex: 1, height: '56px', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', background: 'transparent', borderRadius: '16px' }} onClick={() => { setIsReady(false); setImages([]); }}>{t.back}</button>
-                  <button className="button-primary" style={{ flex: 2, height: '56px', background: '#34c759', borderRadius: '16px', border: 'none', color: '#fff', fontWeight: 700 }} onClick={() => navigate("/voices")}>{t.save}</button>
+                  <button className="button-primary" style={{ flex: 2, height: '56px', background: '#34c759', borderRadius: '16px', border: 'none', color: '#fff', fontWeight: 700 }} onClick={() => onSaveAvatar()}>{t.save}</button>
               </div>
             </div>
           </div>
