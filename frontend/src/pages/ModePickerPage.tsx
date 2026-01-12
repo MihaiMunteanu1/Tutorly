@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthContext"; // Added Auth import
+import { useAuth } from "../auth/AuthContext";
 
 // --- Translation Dictionary ---
 const TRANSLATIONS = {
@@ -16,7 +16,7 @@ const TRANSLATIONS = {
     select: "Selectează",
     settings: "Setări",
     lang: "Limbă",
-    logout: "Deconectare" // Added translation
+    logout: "Deconectare"
   },
   en: {
     title: "Choose Learning Mode",
@@ -30,18 +30,18 @@ const TRANSLATIONS = {
     select: "Select",
     settings: "Settings",
     lang: "Language",
-    logout: "Logout" // Added translation
+    logout: "Logout"
   }
 };
 
 export function ModePickerPage() {
   const navigate = useNavigate();
   const { setToken } = useAuth();
+
   const [lang, setLang] = useState<'ro' | 'en'>('ro');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const t = TRANSLATIONS[lang];
 
-  // Logout functionality
   const handleLogout = () => {
     setToken(null);
     navigate("/login");
@@ -52,17 +52,82 @@ export function ModePickerPage() {
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
       <style>{`
+        /* 1. Global Reset - Exactly as LoginPage */
+        html, body, #root {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          background-color: #020617;
+        }
+
         * { font-family: 'Inter', -apple-system, sans-serif; box-sizing: border-box; }
         
+        /* 2. Seamless Background Animation */
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(50px, -70px) scale(1.1); }
+          66% { transform: translate(-30px, 30px) scale(0.95); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+
+        .background-blobs {
+          position: fixed;
+          top: -10%;
+          left: -10%;
+          width: 120vw;
+          height: 120vh;
+          overflow: hidden;
+          z-index: 0;
+          pointer-events: none;
+        }
+
+        .blob {
+          position: absolute;
+          filter: blur(120px);
+          opacity: 0.35;
+          animation: blob 18s infinite ease-in-out alternate;
+          border-radius: 50%;
+        }
+
+        .blob-1 {
+          top: 10%;
+          left: 10%;
+          width: 600px;
+          height: 600px;
+          background: rgba(53, 114, 239, 0.4); 
+          animation-delay: 0s;
+        }
+
+        .blob-2 {
+          bottom: 10%;
+          right: 15%;
+          width: 700px;
+          height: 700px;
+          background: rgba(100, 50, 200, 0.3); 
+          animation-delay: -5s;
+        }
+
+        .blob-3 {
+          top: 40%;
+          left: 30%;
+          width: 500px;
+          height: 500px;
+          background: rgba(53, 114, 239, 0.2); 
+          animation-delay: -10s;
+        }
+
+        /* 3. Page Specific Content UI */
         .mode-card {
           flex: 1;
           max-width: 500px;
           aspect-ratio: 1 / 1.1;
-          background: rgba(28, 28, 30, 0.6);
+          background: rgba(28, 28, 30, 0.65); /* Adjusted to match LoginPage card depth */
           backdrop-filter: blur(40px);
           -webkit-backdrop-filter: blur(40px);
           border-radius: 48px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -72,6 +137,7 @@ export function ModePickerPage() {
           transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
           text-align: center;
           text-decoration: none;
+          z-index: 1;
         }
 
         .mode-card:hover {
@@ -97,17 +163,19 @@ export function ModePickerPage() {
           transform: scale(1.1) rotate(5deg);
         }
 
-        .lang-toggle:hover {
-          background: rgba(255, 255, 255, 0.15) !important;
-          transform: scale(1.05);
-        }
-
         .logout-btn:hover {
           background: rgba(255, 255, 255, 0.2) !important;
           border-color: rgba(255, 255, 255, 0.4) !important;
           transform: scale(1.05);
         }
       `}</style>
+
+      {/* FIXED BACKGROUND LAYER */}
+      <div className="background-blobs">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
+      </div>
 
       <div style={headerLayout}>
         <h1 style={titleTypography}>{t.title}</h1>
@@ -146,7 +214,7 @@ export function ModePickerPage() {
         </div>
       </div>
 
-      {/* Floating Settings Hub with Logout Integrated */}
+      {/* Floating Settings Hub */}
       <div style={settingsContainer}>
         {settingsOpen && (
           <div style={settingsMenu}>
@@ -159,7 +227,6 @@ export function ModePickerPage() {
               </div>
             </div>
 
-            {/* Logout Row */}
             <div style={{ ...settingsRow, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px', marginTop: '4px' }}>
                 <span style={{ color: '#ff453a' }}>{t.logout}</span>
                 <button className="logout-btn" onClick={handleLogout} style={logoutActionBtn}>
@@ -182,17 +249,29 @@ export function ModePickerPage() {
 
 // --- Style Variables ---
 
-const pageWrapper: React.CSSProperties = { minHeight: "100vh", width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "radial-gradient(circle at top, #1e293b 0, #020617 55%)", padding: "40px", color: "#ffffff" };
-const headerLayout: React.CSSProperties = { textAlign: "center", marginBottom: "80px", maxWidth: "800px" };
+const pageWrapper: React.CSSProperties = {
+  height: "100dvh",
+  width: "100vw",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "transparent",
+  padding: "0",
+  position: 'relative',
+  overflow: 'hidden',
+  color: "#ffffff"
+};
+
+const headerLayout: React.CSSProperties = { textAlign: "center", marginBottom: "80px", maxWidth: "800px", zIndex: 1 };
 const titleTypography: React.CSSProperties = { fontSize: "56px", fontWeight: 800, letterSpacing: "-0.05em", margin: "0 0 16px 0" };
 const subtitleTypography: React.CSSProperties = { fontSize: "20px", color: "#8e8e93", fontWeight: 400, lineHeight: 1.5 };
-const gridContainer: React.CSSProperties = { display: "flex", gap: "40px", width: "100%", maxWidth: "1100px", justifyContent: "center" };
+const gridContainer: React.CSSProperties = { display: "flex", gap: "40px", width: "100%", maxWidth: "1100px", justifyContent: "center", zIndex: 1 };
 const modeIconBase: React.CSSProperties = { display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "inset 0 0 20px rgba(255,255,255,0.05)" };
 const cardTitle: React.CSSProperties = { fontSize: "32px", fontWeight: 700, margin: "0 0 16px 0", letterSpacing: "-0.02em" };
 const cardDesc: React.CSSProperties = { fontSize: "16px", color: "#a1a1a6", lineHeight: 1.6, margin: "0 0 32px 0", maxWidth: "320px" };
 const selectBadge: React.CSSProperties = { padding: "8px 24px", borderRadius: "100px", background: "rgba(53, 114, 239, 0.15)", color: "#3572ef", fontSize: "14px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" };
 
-// Settings HUB Styles
 const settingsContainer: React.CSSProperties = { position: 'fixed', bottom: '40px', right: '40px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '15px' };
 const settingsFab: React.CSSProperties = { width: '56px', height: '56px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(25, 25, 25, 0.8)', color: '#fff', backdropFilter: 'blur(10px)', cursor: 'pointer', fontSize: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' };
 const settingsMenu: React.CSSProperties = { width: '240px', padding: '20px', borderRadius: '24px', background: 'rgba(28, 28, 30, 0.95)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)', color: '#fff', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' };
@@ -200,19 +279,6 @@ const settingsMenuHeader: React.CSSProperties = { fontSize: '16px', fontWeight: 
 const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', fontWeight: 600 };
 const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '2px' };
 const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 0.2s' };
-
-// Cleaner Logout Button Style
-const logoutActionBtn: React.CSSProperties = {
-  background: "rgba(255, 255, 255, 0.05)",
-  border: "1px solid rgba(255, 255, 255, 0.1)",
-  color: "#ffffff",
-  padding: "8px",
-  borderRadius: "12px",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  transition: "all 0.2s ease"
-};
+const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#ffffff", padding: "8px", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" };
 
 export default ModePickerPage;

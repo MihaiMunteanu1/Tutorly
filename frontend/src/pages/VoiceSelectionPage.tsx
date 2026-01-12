@@ -71,24 +71,101 @@ export function VoiceSelectionPage() {
   if (!token || !avatar) return null;
 
   return (
-    <div style={pageWrapper}>
+    <div style={pageWrapper} className="hide-scrollbar">
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
       <style>{`
-        * { font-family: 'Inter', -apple-system, sans-serif; box-sizing: border-box; }
+        /* 1. Global Reset - Exactly as LoginPage */
+        html, body, #root {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          background-color: #020617;
+        }
+
+        * { font-family: 'Inter', -apple-system, sans-serif; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
         
+        /* 2. Hidden Scrollbar Logic */
+        .hide-scrollbar {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+
+        /* 3. Seamless Background Animation */
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(50px, -70px) scale(1.1); }
+          66% { transform: translate(-30px, 30px) scale(0.95); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+
+        .background-blobs {
+          position: fixed;
+          top: -10%;
+          left: -10%;
+          width: 120vw;
+          height: 120vh;
+          overflow: hidden;
+          z-index: 0;
+          pointer-events: none;
+        }
+
+        .blob {
+          position: absolute;
+          filter: blur(120px);
+          opacity: 0.35;
+          animation: blob 18s infinite ease-in-out alternate;
+          border-radius: 50%;
+        }
+
+        .blob-1 {
+          top: 10%; left: 10%;
+          width: 600px; height: 600px;
+          background: rgba(53, 114, 239, 0.4); 
+          animation-delay: 0s;
+        }
+
+        .blob-2 {
+          bottom: 10%; right: 15%;
+          width: 700px; height: 700px;
+          background: rgba(100, 50, 200, 0.3); 
+          animation-delay: -5s;
+        }
+
+        .blob-3 {
+          top: 40%; left: 30%;
+          width: 500px; height: 500px;
+          background: rgba(53, 114, 239, 0.2); 
+          animation-delay: -10s;
+        }
+
+        /* 4. Page Elements */
+        .content-layer {
+          position: relative;
+          z-index: 1;
+          width: 100%;
+          max-width: 1200px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
         .voice-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
           gap: 24px;
           width: 100%;
-          max-width: 1200px;
           margin-top: 20px;
-          padding-bottom: 40px;
+          padding-bottom: 120px; /* Space for settings fab */
         }
 
         .voice-card {
-          background: rgba(28, 28, 30, 0.7);
+          background: rgba(28, 28, 30, 0.6);
           backdrop-filter: blur(30px);
           border-radius: 28px;
           border: 1px solid rgba(255, 255, 255, 0.1);
@@ -105,7 +182,7 @@ export function VoiceSelectionPage() {
         .voice-card:hover {
           transform: translateY(-8px);
           border-color: #3572ef;
-          background: rgba(44, 44, 46, 0.9);
+          background: rgba(44, 44, 46, 0.8);
           box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
         }
 
@@ -127,43 +204,50 @@ export function VoiceSelectionPage() {
         .ring-spinner { width: 50px; height: 50px; border: 4px solid rgba(53, 114, 239, 0.1); border-top: 4px solid #3572ef; border-radius: 50%; animation: spin 1s linear infinite; }
       `}</style>
 
-      {/* REFINED TOP HEADER AREA */}
-      <div style={headerWrapper}>
-        <div style={headerText}>
-          <h1 style={titleTypography}>{t.title}</h1>
-          <p style={subtitleTypography}>{t.subtitle}</p>
-        </div>
-        <button className="back-button" onClick={() => navigate("/avatars")} style={slickBackBtn}>
-          {t.back}
-        </button>
+      {/* FIXED BACKGROUND LAYER */}
+      <div className="background-blobs">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
       </div>
 
-      {loading ? (
-        <div style={loaderContainer}>
-          <div className="ring-spinner" />
-          <p style={{ marginTop: 20, color: "#8e8e93", fontWeight: 500 }}>{t.loading}</p>
+      <div className="content-layer">
+        <div style={headerWrapper}>
+          <div style={headerText}>
+            <h1 style={titleTypography}>{t.title}</h1>
+            <p style={subtitleTypography}>{t.subtitle}</p>
+          </div>
+          <button className="back-button" onClick={() => navigate("/avatars")} style={slickBackBtn}>
+            {t.back}
+          </button>
         </div>
-      ) : error ? (
-        <div style={errorCard}>{error}</div>
-      ) : (
-        <div className="voice-grid">
-          {voices.map((v) => (
-            <div key={v.id} className="voice-card" onClick={() => handleSelect(v)}>
-              <div className="voice-meta">
-                <span className="voice-name">{v.name}</span>
-                {v.gender && <span className="voice-tag">{v.gender}</span>}
-              </div>
-              <div className="voice-lang">🌐 {v.language}</div>
-              <div className="audio-wrapper" onClick={(e) => e.stopPropagation()}>
-                {v.preview_audio ? <audio controls src={v.preview_audio} /> : <div style={{ fontSize: 11, color: "#48484a", textAlign: 'center', padding: '8px' }}>{t.noAudio}</div>}
-              </div>
-              <button className="select-btn">{t.select}</button>
-            </div>
-          ))}
-        </div>
-      )}
 
-      {/* Settings Hub with Cleaner Logout */}
+        {loading ? (
+          <div style={loaderContainer}>
+            <div className="ring-spinner" />
+            <p style={{ marginTop: 20, color: "#8e8e93", fontWeight: 500 }}>{t.loading}</p>
+          </div>
+        ) : error ? (
+          <div style={errorCard}>{error}</div>
+        ) : (
+          <div className="voice-grid">
+            {voices.map((v) => (
+              <div key={v.id} className="voice-card" onClick={() => handleSelect(v)}>
+                <div className="voice-meta">
+                  <span className="voice-name">{v.name}</span>
+                  {v.gender && <span className="voice-tag">{v.gender}</span>}
+                </div>
+                <div className="voice-lang">🌐 {v.language}</div>
+                <div className="audio-wrapper" onClick={(e) => e.stopPropagation()}>
+                  {v.preview_audio ? <audio controls src={v.preview_audio} /> : <div style={{ fontSize: 11, color: "#48484a", textAlign: 'center', padding: '8px' }}>{t.noAudio}</div>}
+                </div>
+                <button className="select-btn">{t.select}</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div style={settingsContainer}>
         {settingsOpen && (
           <div style={settingsMenu}>
@@ -194,7 +278,18 @@ export function VoiceSelectionPage() {
 }
 
 // --- Style Objects ---
-const pageWrapper: React.CSSProperties = { minHeight: "100vh", width: "100%", background: "radial-gradient(circle at top, #1e293b 0, #020617 55%)", padding: "60px 40px", display: 'flex', flexDirection: 'column', alignItems: 'center' };
+const pageWrapper: React.CSSProperties = {
+  height: "100dvh",
+  width: "100vw",
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  background: "transparent",
+  position: 'relative',
+  overflowY: 'auto',
+  padding: "60px 40px 0 40px"
+};
+
 const headerWrapper: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', maxWidth: '1200px', marginBottom: '40px' };
 const headerText: React.CSSProperties = { textAlign: "left", flex: 1 };
 const titleTypography: React.CSSProperties = { fontSize: "48px", fontWeight: 800, letterSpacing: "-0.05em", margin: 0, color: "#ffffff" };
@@ -203,7 +298,6 @@ const slickBackBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.0
 const loaderContainer: React.CSSProperties = { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "400px" };
 const errorCard: React.CSSProperties = { background: "rgba(255, 69, 58, 0.1)", border: "1px solid #ff453a", padding: "20px 40px", borderRadius: "20px", color: "#ff453a", marginTop: "40px", fontWeight: 600 };
 
-// Settings Hub Styles
 const settingsContainer: React.CSSProperties = { position: 'fixed', bottom: '40px', right: '40px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '15px' };
 const settingsFab: React.CSSProperties = { width: '56px', height: '56px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(25, 25, 25, 0.8)', color: '#fff', backdropFilter: 'blur(10px)', cursor: 'pointer', fontSize: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' };
 const settingsMenu: React.CSSProperties = { width: '240px', padding: '20px', borderRadius: '24px', background: 'rgba(28, 28, 30, 0.95)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)', color: '#fff', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' };

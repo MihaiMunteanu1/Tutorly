@@ -96,7 +96,6 @@ export function TextChatPage() {
     if (!trimmed) return;
     typingJobRef.current++;
 
-    // Randomize Thinking Prompt
     const thinkingPrompts = t.thinking;
     const randomPrompt = thinkingPrompts[Math.floor(Math.random() * thinkingPrompts.length)];
 
@@ -135,11 +134,78 @@ export function TextChatPage() {
     <div style={pageWrapper}>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       <style>{`
+        /* 1. Global Reset */
+        html, body, #root {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          background-color: #020617;
+        }
+
         * { font-family: 'Inter', -apple-system, sans-serif; box-sizing: border-box; }
         
+        /* 2. Seamless Background Blobs */
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(50px, -70px) scale(1.1); }
+          66% { transform: translate(-30px, 30px) scale(0.95); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+
+        .background-blobs {
+          position: fixed;
+          top: -10%;
+          left: -10%;
+          width: 120vw;
+          height: 120vh;
+          overflow: hidden;
+          z-index: 0;
+          pointer-events: none;
+        }
+
+        .blob {
+          position: absolute;
+          filter: blur(120px);
+          opacity: 0.35;
+          animation: blob 18s infinite ease-in-out alternate;
+          border-radius: 50%;
+        }
+
+        .blob-1 {
+          top: 10%;
+          left: 10%;
+          width: 600px;
+          height: 600px;
+          background: rgba(53, 114, 239, 0.4); 
+          animation-delay: 0s;
+        }
+
+        .blob-2 {
+          bottom: 10%;
+          right: 15%;
+          width: 700px;
+          height: 700px;
+          background: rgba(100, 50, 200, 0.3); 
+          animation-delay: -5s;
+        }
+
+        .blob-3 {
+          top: 40%;
+          left: 30%;
+          width: 500px;
+          height: 500px;
+          background: rgba(53, 114, 239, 0.2); 
+          animation-delay: -10s;
+        }
+
+        /* 3. Chat Specific Styles */
         .scroll-area {
           flex: 1; width: 100%; overflow-y: auto; padding-bottom: 220px; padding-top: 100px;
           scrollbar-width: none; -ms-overflow-style: none;
+          z-index: 1;
+          position: relative;
         }
         .scroll-area::-webkit-scrollbar { display: none; }
 
@@ -157,7 +223,7 @@ export function TextChatPage() {
 
         .user-bubble {
           align-self: flex-end;
-          background: linear-gradient(135deg, rgba(53, 114, 239, 0.12) 0%, rgba(53, 114, 239, 0.08) 100%);
+          background: linear-gradient(135deg, rgba(53, 114, 239, 0.15) 0%, rgba(53, 114, 239, 0.08) 100%);
           border: 1px solid rgba(53, 114, 239, 0.25);
           color: #fff;
           border-bottom-right-radius: 6px;
@@ -165,9 +231,9 @@ export function TextChatPage() {
 
         .ai-bubble {
           align-self: flex-start;
-          background: rgba(255, 255, 255, 0.03);
+          background: rgba(255, 255, 255, 0.04);
           border: 1px solid rgba(255, 255, 255, 0.08);
-          color: #a1a1a6;
+          color: #e1e1e6;
           border-bottom-left-radius: 6px;
           backdrop-filter: blur(20px);
         }
@@ -194,7 +260,15 @@ export function TextChatPage() {
         @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(255, 69, 58, 0.3); } 70% { box-shadow: 0 0 0 10px rgba(255, 69, 58, 0); } 100% { box-shadow: 0 0 0 0px rgba(255, 69, 58, 0); } }
 
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .logout-btn:hover { background: rgba(255, 255, 255, 0.2) !important; transform: scale(1.05); }
       `}</style>
+
+      {/* FIXED BACKGROUND LAYER */}
+      <div className="background-blobs">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
+      </div>
 
       <button className="floating-back" onClick={() => navigate("/mode")}>← {t.back}</button>
 
@@ -248,15 +322,17 @@ export function TextChatPage() {
             </div>
           </div>
         )}
-        <button onClick={() => setSettingsOpen(!settingsOpen)} style={settingsFab}>{settingsOpen ? '✕' : '⚙'}</button>
+        <button onClick={() => setSettingsOpen(!settingsOpen)} style={settingsFab}>
+          {settingsOpen ? '✕' : '⚙'}
+        </button>
       </div>
     </div>
   );
 }
 
 // --- Layout Styles ---
-const pageWrapper: React.CSSProperties = { height: "100vh", width: "100%", background: "#020617", display: 'flex', flexDirection: 'column' };
-const heroEmptyState: React.CSSProperties = { height: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', opacity: 0.15, fontSize: '24px', fontWeight: 600, color: 'white' };
+const pageWrapper: React.CSSProperties = { height: "100dvh", width: "100vw", display: 'flex', flexDirection: 'column', background: 'transparent', position: 'relative', overflow: 'hidden' };
+const heroEmptyState: React.CSSProperties = { height: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', opacity: 0.15, fontSize: '24px', fontWeight: 600, color: 'white', zIndex: 1 };
 const inputDock: React.CSSProperties = { position: 'fixed', bottom: 0, left: 0, right: 0, padding: '50px 0', background: 'linear-gradient(transparent, #020617 80%)', display: 'flex', justifyContent: 'center', zIndex: 900 };
 const inputConsole: React.CSSProperties = { width: '100%', maxWidth: '1000px', background: 'rgba(25, 25, 30, 0.95)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '40px', padding: '12px 12px 12px 32px', display: 'flex', alignItems: 'center', backdropFilter: 'blur(40px)', boxShadow: '0 30px 60px rgba(0, 0, 0, 0.5)' };
 const invisibleInput: React.CSSProperties = { flex: 1, background: 'transparent', border: 'none', color: 'white', fontSize: '17px', outline: 'none', padding: '12px 0' };
