@@ -9,6 +9,7 @@ import { SubjectAvatarsPage } from "./pages/SubjectAvatarsPage";
 import { TextChatPage } from "./pages/TextChatPage";
 import { CreateYourselfPage } from "./pages/CreateYourselfPage";
 import ModePickerPage from "./pages/ModePickerPage";
+import { LiveChatPage } from "./pages/LiveChatPage";
 
 export function App() {
   return (
@@ -26,6 +27,7 @@ export function App() {
               <Route path="/text-chat" element={<TextChatPage />} />
               <Route path="/voices" element={<VoiceSelectionPage />} />
               <Route path="/mode" element={<ModePickerPage />} />
+              <Route path="/livechat" element={<LiveChatPage />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>

@@ -11,6 +11,8 @@ const TRANSLATIONS = {
     chatDesc: "O experiență rapidă, bazată pe text. Ideal pentru întrebări punctuale și răspunsuri instantanee.",
     videoTitle: "Experiență Video",
     videoDesc: "Interacțiune completă cu avatar video. Lecții vizuale și conversație vocală imersivă.",
+    liveTitle: "Live Chat (Avatar)",
+    liveDesc: "Conversație live cu un avatar HeyGen (LiveAvatar). Poți vorbi sau scrie și primești răspuns în timp real.",
     select: "Selectează",
     settings: "Setări",
     lang: "Limbă",
@@ -23,6 +25,8 @@ const TRANSLATIONS = {
     chatDesc: "A fast, text-based experience. Ideal for quick questions and instant answers.",
     videoTitle: "Video Experience",
     videoDesc: "Full interaction with video avatar. Visual lessons and immersive voice conversation.",
+    liveTitle: "Live Chat (Avatar)",
+    liveDesc: "Live conversation with a HeyGen LiveAvatar. Speak or type and get real-time responses.",
     select: "Select",
     settings: "Settings",
     lang: "Language",
@@ -32,7 +36,7 @@ const TRANSLATIONS = {
 
 export function ModePickerPage() {
   const navigate = useNavigate();
-  const { setToken } = useAuth() as any; // Destructured setToken for logout
+  const { setToken } = useAuth();
   const [lang, setLang] = useState<'ro' | 'en'>('ro');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const t = TRANSLATIONS[lang];
@@ -129,6 +133,16 @@ export function ModePickerPage() {
           <h2 style={cardTitle}>{t.videoTitle}</h2>
           <p style={cardDesc}>{t.videoDesc}</p>
           <div style={{ ...selectBadge, background: '#a78bfa33', color: '#a78bfa' }}>{t.select}</div>
+        </div>
+
+        {/* --- Live Chat Mode (HeyGen LiveAvatar) --- */}
+        <div className="mode-card" onClick={() => navigate("/livechat")}>
+          <div style={{ ...modeIconBase, background: 'rgba(34, 211, 238, 0.12)', color: '#22d3ee' }} className="mode-icon">
+            🤖
+          </div>
+          <h2 style={cardTitle}>{t.liveTitle}</h2>
+          <p style={cardDesc}>{t.liveDesc}</p>
+          <div style={{ ...selectBadge, background: 'rgba(34, 211, 238, 0.12)', color: '#22d3ee' }}>{t.select}</div>
         </div>
       </div>
 

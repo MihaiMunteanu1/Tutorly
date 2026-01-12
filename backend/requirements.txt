@@ -9,3 +9,5 @@ transformers
 openai-whisper
 ollama
 flask
+livekit-plugins-liveavatar
+livekit-api

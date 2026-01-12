@@ -32,6 +32,28 @@ export type HeygenGroupResponse = {
   };
 };
 
+export type LiveAvatarTokenResponse = {
+  session_id: string;
+  session_token: string;
+};
+
+export type LiveAvatarStartResponse = {
+  session_id: string;
+  livekit_url: string;
+  livekit_client_token: string;
+  livekit_agent_token?: string | null;
+  max_session_duration?: number | null;
+  ws_url?: string | null;
+};
+
+export type LiveAvatarTokenRequest = {
+  avatar_id?: string;
+  voice_id?: string;
+  context_id?: string;
+  language?: string;
+  mode?: string; // "FULL"
+};
+
 export async function login(username: string, password: string) {
   const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
@@ -110,4 +132,115 @@ export async function getJobStatus(token: string, jobId: string) {
   });
   if (!res.ok) throw new Error("Cannot get job status");
   return res.json() as Promise<{ status: string; video_url?: string }>;
+}
+
+export async function livechatCreateToken(token: string,payload: LiveAvatarTokenRequest): Promise<LiveAvatarTokenResponse> {
+  const res = await fetch(`${API_URL}/api/livechat/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload ?? {}),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Livechat token failed: ${res.status} ${text}`);
+  }
+
+  return res.json();
+}
+
+export async function livechatStart(token: string, sessionToken: string): Promise<LiveAvatarStartResponse> {
+  const formData = new FormData();
+  formData.append("session_token", sessionToken);
+
+  const res = await fetch(`${API_URL}/api/livechat/start`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Livechat start failed: ${res.status} ${text}`);
+  }
+
+  return res.json();
+}
+
+export async function livechatStop(token: string, sessionId: string): Promise<{ ok: boolean }> {
+  const res = await fetch(`${API_URL}/api/livechat/stop`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ session_id: sessionId, reason: "USER_CLOSED" }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Livechat stop failed: ${res.status} ${text}`);
+  }
+
+  return res.json();
+}
+
+export async function livechatAgentStart(
+  token: string,
+  input: { session_id: string; livekit_url: string; livekit_agent_token: string; avatar_id?: string }
+): Promise<{ ok: boolean }> {
+  const res = await fetch(`${API_URL}/api/livechat/agent/start`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(input),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Livechat agent start failed: ${res.status} ${text}`);
+  }
+
+  return res.json();
+}
+
+export async function livechatAgentStop(token: string, sessionId: string): Promise<{ ok: boolean }> {
+  const res = await fetch(`${API_URL}/api/livechat/agent/stop`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ session_id: sessionId, reason: "USER_CLOSED" }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Livechat agent stop failed: ${res.status} ${text}`);
+  }
+
+  return res.json();
+}
+
+export async function livechatAgentStatus(token: string, sessionId: string): Promise<{ running: boolean }> {
+  const res = await fetch(`${API_URL}/api/livechat/agent/status/${sessionId}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Livechat agent status failed: ${res.status} ${text}`);
+  }
+
+  return res.json();
 }

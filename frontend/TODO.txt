@@ -1,5 +1,6 @@
 TO DO
 
 - npm create vite@latest frontend -- --template react-ts
+- * npm install @heygen/liveavatar-web-sdk
 - npm install
 - npm run dev

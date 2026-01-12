@@ -22,10 +22,19 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
 from app.ollama_client import OllamaTeacher
+from app.liveavatar_agent import AGENT_MANAGER
 
 load_dotenv()
 
 HEYGEN_API_KEY = os.getenv("HEYGEN_API_KEY")
+# LiveAvatar (HeyGen) key for https://api.liveavatar.com
+HEYGEN_API_LIVEAVATAR_KEY = os.getenv("HEYGEN_API_LIVEAVATAR_KEY")
+
+# default LiveAvatar config (can be overridden later if needed)
+HEYGEN_LIVEAVATAR_AVATAR_ID = os.getenv("HEYGEN_LIVEAVATAR_AVATAR_ID", "1c690fe7-23e0-49f9-bfba-14344450285b")
+HEYGEN_LIVEAVATAR_VOICE_ID = os.getenv("HEYGEN_LIVEAVATAR_VOICE_ID", "c2527536-6d1f-4412-a643-53a3497dada9")
+HEYGEN_LIVEAVATAR_CONTEXT_ID = os.getenv("HEYGEN_LIVEAVATAR_CONTEXT_ID", "84fbd930-e2ad-4d16-a4ee-966bbfe3aff9")
+
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-me")
 JWT_ALG = "HS256"
 
@@ -765,6 +774,155 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     text: str
 
+# -----------------------------
+# LiveAvatar (LiveChat) endpoints
+# -----------------------------
+
+LIVEAVATAR_BASE_URL = "https://api.liveavatar.com"
+
+class LiveAvatarTokenRequest(BaseModel):
+    # allow frontend to override if you want, but defaults are set from env
+    avatar_id: Optional[str] = None
+    voice_id: Optional[str] = None
+    context_id: Optional[str] = None
+    language: Optional[str] = "en"
+    mode: Optional[str] = "FULL"  # FULL recommended for interactive chat
+
+class LiveAvatarTokenResponse(BaseModel):
+    session_id: str
+    session_token: str
+
+class LiveAvatarStartResponse(BaseModel):
+    session_id: str
+    livekit_url: str
+    livekit_client_token: str
+    livekit_agent_token: Optional[str] = None
+    max_session_duration: Optional[int] = None
+    ws_url: Optional[str] = None
+
+class LiveAvatarStopRequest(BaseModel):
+    session_id: str
+    reason: Optional[str] = "USER_CLOSED"
+
+class LiveAvatarStopResponse(BaseModel):
+    ok: bool
+
+
+def _require_liveavatar_key() -> str:
+    if not HEYGEN_API_LIVEAVATAR_KEY:
+        raise HTTPException(status_code=500, detail="Missing HEYGEN_API_LIVEAVATAR_KEY in .env")
+    return HEYGEN_API_LIVEAVATAR_KEY
+
+@app.post("/api/livechat/token", response_model=LiveAvatarTokenResponse)
+def livechat_create_session_token(
+    req: LiveAvatarTokenRequest,
+    user: str = Depends(get_current_user),
+) -> LiveAvatarTokenResponse:
+    api_key = _require_liveavatar_key()
+
+    avatar_id = (req.avatar_id or HEYGEN_LIVEAVATAR_AVATAR_ID).strip()
+    voice_id = (req.voice_id or HEYGEN_LIVEAVATAR_VOICE_ID).strip()
+    context_id = (req.context_id or HEYGEN_LIVEAVATAR_CONTEXT_ID).strip()
+    language = (req.language or "en").strip() or "en"
+    mode = (req.mode or "FULL").strip().upper()
+
+    payload: Dict[str, Any] = {
+        "mode": mode,
+        "avatar_id": avatar_id,
+        "avatar_persona": {
+            "voice_id": voice_id,
+            "context_id": context_id,
+            "language": language,
+        },
+    }
+
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "X-API-KEY": api_key,
+    }
+
+    try:
+        resp = requests.post(f"{LIVEAVATAR_BASE_URL}/v1/sessions/token", json=payload, headers=headers, timeout=30)
+        if not resp.ok:
+            raise HTTPException(status_code=resp.status_code, detail=resp.text)
+        raw = resp.json() or {}
+        data = raw.get("data") or {}
+        session_id = data.get("session_id")
+        session_token = data.get("session_token")
+        if not session_id or not session_token:
+            raise HTTPException(status_code=502, detail=f"Unexpected LiveAvatar response: {raw}")
+        return LiveAvatarTokenResponse(session_id=session_id, session_token=session_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"LiveAvatar token error: {type(e).__name__}: {e}")
+
+@app.post("/api/livechat/start", response_model=LiveAvatarStartResponse)
+def livechat_start(
+    session_token: str = Form(""),
+    user: str = Depends(get_current_user),
+) -> LiveAvatarStartResponse:
+    session_token = (session_token or "").strip()
+    if not session_token:
+        raise HTTPException(status_code=400, detail="Missing session_token")
+
+    headers = {
+        "accept": "application/json",
+        "authorization": f"Bearer {session_token}",
+    }
+
+    try:
+        resp = requests.post(f"{LIVEAVATAR_BASE_URL}/v1/sessions/start", headers=headers, timeout=30)
+        if not resp.ok:
+            raise HTTPException(status_code=resp.status_code, detail=resp.text)
+        raw = resp.json() or {}
+        data = raw.get("data") or {}
+        session_id = data.get("session_id")
+        livekit_url = data.get("livekit_url")
+        livekit_client_token = data.get("livekit_client_token")
+        if not session_id or not livekit_url or not livekit_client_token:
+            raise HTTPException(status_code=502, detail=f"Unexpected LiveAvatar response: {raw}")
+        return LiveAvatarStartResponse(
+            session_id=session_id,
+            livekit_url=livekit_url,
+            livekit_client_token=livekit_client_token,
+            livekit_agent_token=data.get("livekit_agent_token"),
+            max_session_duration=data.get("max_session_duration"),
+            ws_url=data.get("ws_url"),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"LiveAvatar start error: {type(e).__name__}: {e}")
+
+@app.post("/api/livechat/stop", response_model=LiveAvatarStopResponse)
+def livechat_stop(
+    req: LiveAvatarStopRequest,
+    user: str = Depends(get_current_user),
+) -> LiveAvatarStopResponse:
+    api_key = _require_liveavatar_key()
+
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "X-API-KEY": api_key,
+    }
+    payload = {
+        "session_id": req.session_id,
+        "reason": (req.reason or "USER_CLOSED").strip() or "USER_CLOSED",
+    }
+
+    try:
+        resp = requests.post(f"{LIVEAVATAR_BASE_URL}/v1/sessions/stop", json=payload, headers=headers, timeout=30)
+        if not resp.ok:
+            raise HTTPException(status_code=resp.status_code, detail=resp.text)
+        return LiveAvatarStopResponse(ok=True)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"LiveAvatar stop error: {type(e).__name__}: {e}")
+
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest, user: str = Depends(get_current_user)) -> ChatResponse:
     text = (req.text or "").strip()
@@ -831,3 +989,61 @@ def _heygen_post_generate(payload: dict) -> dict:
         raise
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"HeyGen generate error: {type(e).__name__}: {e}")
+
+# --- NEW: LiveKit Agent control endpoints ---
+
+class LiveAvatarAgentStartRequest(BaseModel):
+    session_id: str
+    livekit_url: str
+    livekit_agent_token: str
+    avatar_id: Optional[str] = None
+
+class LiveAvatarAgentStatusResponse(BaseModel):
+    running: bool
+
+@app.post("/api/livechat/agent/start", response_model=LiveAvatarStopResponse)
+def livechat_agent_start(
+    req: LiveAvatarAgentStartRequest,
+    user: str = Depends(get_current_user),
+) -> LiveAvatarStopResponse:
+    avatar_id = (req.avatar_id or HEYGEN_LIVEAVATAR_AVATAR_ID).strip()
+
+    # Kick off agent in background (in-process).
+    # Important: this agent participant publishes avatar A/V tracks.
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    loop.create_task(
+        AGENT_MANAGER.start(
+            livekit_url=req.livekit_url,
+            livekit_agent_token=req.livekit_agent_token,
+            avatar_id=avatar_id,
+            session_id=req.session_id,
+        )
+    )
+
+    return LiveAvatarStopResponse(ok=True)
+
+@app.get("/api/livechat/agent/status/{session_id}", response_model=LiveAvatarAgentStatusResponse)
+def livechat_agent_status(session_id: str, user: str = Depends(get_current_user)) -> LiveAvatarAgentStatusResponse:
+    return LiveAvatarAgentStatusResponse(running=AGENT_MANAGER.is_running(session_id))
+
+@app.post("/api/livechat/agent/stop", response_model=LiveAvatarStopResponse)
+def livechat_agent_stop(
+    req: LiveAvatarStopRequest,
+    user: str = Depends(get_current_user),
+) -> LiveAvatarStopResponse:
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    loop.create_task(AGENT_MANAGER.stop(req.session_id))
+    return LiveAvatarStopResponse(ok=True)
+
