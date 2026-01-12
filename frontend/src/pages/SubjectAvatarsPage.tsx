@@ -9,7 +9,7 @@ type AvatarSelection = { id: string; name: string; image_url?: string; avatar_ty
 type VoiceSelection = { id: string; name: string };
 type AuthContextShape = {
   token: string | null;
-  setToken: (t: string | null) => void; // Added for logout
+  setToken: (t: string | null) => void;
   setAvatar: (a: AvatarSelection) => void;
   setVoice: (v: VoiceSelection) => void;
 };
@@ -38,11 +38,11 @@ const TRANSLATIONS = {
     createAvatar: "Creare Avatar",
     cloneImage: "Clonare Imagine",
     yourAvatar: "Avatarul Tău",
-    yourAvatarDesc: "Transformă o fotografie personală într-un tutor digital care îți vorbește în timp real.",
+    yourAvatarDesc: "Transformă o fotografie personală întrun tutor digital care îți vorbește în timp real.",
     createNow: "Creează Acum",
     settings: "Setări",
     languageLabel: "Limbă",
-    logout: "Deconectare", // Romanian Translation
+    logout: "Deconectare",
     presets: {
       informatica: { title: "Informatica", desc: "Lumea Algoritmilor", long: "Explorează structurile de date și conceptele OOP într-un mod interactiv." },
       geografie: { title: "Geografie", desc: "Orizonturi Globale", long: "Hărți, relief și capitale explicate de un ghid digital pasionat." },
@@ -67,7 +67,7 @@ const TRANSLATIONS = {
     createNow: "Create Now",
     settings: "Settings",
     languageLabel: "Language",
-    logout: "Logout", // English Translation
+    logout: "Logout",
     presets: {
       informatica: { title: "Computer Science", desc: "World of Algorithms", long: "Explore data structures and OOP concepts in an interactive way." },
       geografie: { title: "Geography", desc: "Global Horizons", long: "Maps, landforms, and capitals explained by a digital guide." },
@@ -79,9 +79,9 @@ const TRANSLATIONS = {
 
 const PRESETS: Preset[] = [
   { key: "informatica", avatarGroupId: "d08c85e6cff84d78b6dc41d83a2eccce", avatarId: "Brandon_Office_Sitting_Front_public", avatarName: "Brandon Office Sitting Front", voiceId: "3787b4ab93174952a3ad649209f1029a", voiceName: "Brandon" },
-  { key: "geografie", avatarGroupId: "1727672614", avatarId: "Georgia_sitting_office_front", avatarName: "Georgia Sitting Office Front", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia" },
-  { key: "mate", avatarGroupId: "977b1ab85dba4eefb159a6072677effd", avatarId: "Caroline_Business_Sitting_Side_public", avatarName: "Caroline Business Sitting Side", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia" },
-  { key: "engleza", avatarGroupId: "977b1ab85dba4eefb159a6072677effd", avatarId: "Caroline_Lobby_Standing_Side_public", avatarName: "Caroline Lobby Standing Side", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia" },
+  { key: "geografie", avatarGroupId: "1727672614", avatarId: "Georgia_sitting_office_front", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia", avatarName: "Georgia Sitting Office Front" },
+  { key: "mate", avatarGroupId: "977b1ab85dba4eefb159a6072677effd", avatarId: "Caroline_Business_Sitting_Side_public", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia", avatarName: "Caroline Business Sitting Side" },
+  { key: "engleza", avatarGroupId: "977b1ab85dba4eefb159a6072677effd", avatarId: "Caroline_Lobby_Standing_Side_public", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia", avatarName: "Caroline Lobby Standing Side" },
 ];
 
 async function fetchAvatarPreviewFromGroup(params: { token: string; groupId: string; avatarId: string }) {
@@ -167,15 +167,84 @@ export function SubjectAvatarsPage() {
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
       <style>{`
-        * { font-family: 'Inter', -apple-system, sans-serif; }
+        /* 1. Global Reset - Exactly as LoginPage */
+        html, body, #root {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden; /* Removes browser scrollbar */
+          background-color: #020617;
+        }
+
+        * { font-family: 'Inter', -apple-system, sans-serif; box-sizing: border-box; }
+        
+        /* 2. Seamless Background Animation */
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(50px, -70px) scale(1.1); }
+          66% { transform: translate(-30px, 30px) scale(0.95); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+
+        .background-blobs {
+          position: fixed;
+          top: -10%;
+          left: -10%;
+          width: 120vw;
+          height: 120vh;
+          overflow: hidden;
+          z-index: 0;
+          pointer-events: none;
+        }
+
+        .blob {
+          position: absolute;
+          filter: blur(120px);
+          opacity: 0.35;
+          animation: blob 18s infinite ease-in-out alternate;
+          border-radius: 50%;
+        }
+
+        .blob-1 {
+          top: 10%;
+          left: 10%;
+          width: 600px;
+          height: 600px;
+          background: rgba(53, 114, 239, 0.4); 
+          animation-delay: 0s;
+        }
+
+        .blob-2 {
+          bottom: 10%;
+          right: 15%;
+          width: 700px;
+          height: 700px;
+          background: rgba(100, 50, 200, 0.3); 
+          animation-delay: -5s;
+        }
+
+        .blob-3 {
+          top: 40%;
+          left: 30%;
+          width: 500px;
+          height: 500px;
+          background: rgba(53, 114, 239, 0.2); 
+          animation-delay: -10s;
+        }
+
+        /* 3. Page Styles */
         .flip-container { perspective: 2000px; perspective-origin: center center; flex: 0 0 calc((100% - (80px)) / 3); aspect-ratio: 4 / 5.5; min-width: 340px; z-index: 1; transition: z-index 0.4s step-end; }
         .flip-container:hover { z-index: 50; transition: z-index 0s step-start; }
         .flip-inner { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); transform-style: preserve-3d; transform-origin: center center; }
         .flip-container:hover .flip-inner { transform: rotateY(180deg); }
         .flip-front, .flip-back { position: absolute; top: 0; left: 0; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 40px; overflow: hidden; box-sizing: border-box; border: 1px solid rgba(255, 255, 255, 0.12); }
         .flip-back { transform: rotateY(180deg); background: rgba(28, 28, 30, 0.98); backdrop-filter: blur(40px); display: flex; flex-direction: column; padding: 40px; justify-content: center; align-items: center; text-align: center; }
+        
+        /* Slider needs horizontal overflow while keeping page locked vertically */
         .slider-container::-webkit-scrollbar { display: none; }
-        .slider-container { -ms-overflow-style: none; scrollbar-width: none; overflow-y: visible !important; }
+        .slider-container { -ms-overflow-style: none; scrollbar-width: none; overflow-x: auto !important; overflow-y: visible !important; }
+        
         @keyframes movingGlow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
         .pro-glow::before { content: ""; position: absolute; inset: -2px; border-radius: 42px; padding: 2px; background: linear-gradient(90deg, #3a86ff, #8338ec, #ff006e, #3a86ff); background-size: 200% 200%; animation: movingGlow 6s linear infinite; -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
         .side-arrow:hover { background: rgba(255, 255, 255, 0.15) !important; transform: translateY(-50%) scale(1.1); border-color: rgba(255, 255, 255, 0.3) !important; }
@@ -183,82 +252,89 @@ export function SubjectAvatarsPage() {
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .loader-wrapper { display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; background: #1c1c1e; }
         .ring-spinner { width: 45px; height: 45px; border: 3px solid rgba(53, 114, 239, 0.1); border-top: 3px solid #3572ef; border-radius: 50%; animation: spin 0.8s linear infinite; }
-        
         .logout-btn:hover { background: rgba(255, 255, 255, 0.2) !important; border-color: rgba(255, 255, 255, 0.4) !important; transform: scale(1.05); }
       `}</style>
 
-      <div style={headerLayout}>
-        <div style={{ flex: 1 }}>
-          <h1 style={titleTypography}>{t.headerTitle}</h1>
-          <p style={subtitleTypography}>{loading ? t.loading : t.headerSubtitle}</p>
-        </div>
-        <button className="button-secondary" onClick={() => navigate("/mode")} style={refinedBackBtn}>{t.back}</button>
+      {/* FIXED BACKGROUND LAYER */}
+      <div className="background-blobs">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
       </div>
 
-      <div style={{ position: "relative", width: "100%" }}>
-        <button className="side-arrow" onClick={() => scrollByAmount("L")} style={{ ...refinedArrowBtn, left: "-100px" }}>←</button>
-        <button className="side-arrow" onClick={() => scrollByAmount("R")} style={{ ...refinedArrowBtn, right: "-100px" }}>→</button>
+      <div style={contentWrapper}>
+        <div style={headerLayout}>
+          <div style={{ flex: 1 }}>
+            <h1 style={titleTypography}>{t.headerTitle}</h1>
+            <p style={subtitleTypography}>{loading ? t.loading : t.headerSubtitle}</p>
+          </div>
+          <button className="button-secondary" onClick={() => navigate("/mode")} style={refinedBackBtn}>{t.back}</button>
+        </div>
 
-        <div ref={sliderRef} className="slider-container" style={sliderLayout}>
-          {PRESETS.map((p) => {
-            const preview = previewByKey[p.key];
-            const content = t.presets[p.key];
-            return (
-              <div key={p.key} className="flip-container">
-                <div className="flip-inner">
-                  <div className="flip-front" style={{ background: '#1c1c1e' }}>
-                    {!preview?.imageUrl ? (
-                      <div className="loader-wrapper"><div className="ring-spinner"></div></div>
-                    ) : (
-                      <>
-                        <img src={preview.imageUrl} style={fullImg} alt={content.title} draggable="false" />
-                        <div style={appleGradientOverlay} />
-                        <div style={badgeContainer}><span style={disciplineBadge}>{content.title}</span></div>
-                      </>
-                    )}
-                  </div>
-                  <div className="flip-back" onClick={(e) => { e.stopPropagation(); onPickPreset(p); }}>
-                    <span style={disciplineBadgeSmall}>{content.title}</span>
-                    <h3 style={cardHeaderStyle}>{content.desc}</h3>
-                    <p style={cardDescriptionStyle}>{content.long}</p>
-                    <button style={startBtnStyle}>{t.startLesson}</button>
+        <div style={{ position: "relative", width: "100%" }}>
+          <button className="side-arrow" onClick={() => scrollByAmount("L")} style={{ ...refinedArrowBtn, left: "-100px" }}>←</button>
+          <button className="side-arrow" onClick={() => scrollByAmount("R")} style={{ ...refinedArrowBtn, right: "-100px" }}>→</button>
+
+          <div ref={sliderRef} className="slider-container" style={sliderLayout}>
+            {PRESETS.map((p) => {
+              const preview = previewByKey[p.key];
+              const content = t.presets[p.key];
+              return (
+                <div key={p.key} className="flip-container">
+                  <div className="flip-inner">
+                    <div className="flip-front" style={{ background: '#1c1c1e' }}>
+                      {!preview?.imageUrl ? (
+                        <div className="loader-wrapper"><div className="ring-spinner"></div></div>
+                      ) : (
+                        <>
+                          <img src={preview.imageUrl} style={fullImg} alt={content.title} draggable="false" />
+                          <div style={appleGradientOverlay} />
+                          <div style={badgeContainer}><span style={disciplineBadge}>{content.title}</span></div>
+                        </>
+                      )}
+                    </div>
+                    <div className="flip-back" onClick={(e) => { e.stopPropagation(); onPickPreset(p); }}>
+                      <span style={disciplineBadgeSmall}>{content.title}</span>
+                      <h3 style={cardHeaderStyle}>{content.desc}</h3>
+                      <p style={cardDescriptionStyle}>{content.long}</p>
+                      <button style={startBtnStyle}>{t.startLesson}</button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
 
-          <div className="flip-container">
-            <div className="flip-inner pro-glow">
-              <div className="flip-front" style={specialVisualArea}>
-                <div style={refinedIconCircle}>✨</div>
-                <div style={badgeContainer}><span style={disciplineBadge}>{t.personalization}</span></div>
-              </div>
-              <div className="flip-back" onClick={() => navigate("/avatars")}>
-                <h3 style={cardHeaderStyle}>{t.customSelection}</h3>
-                <p style={cardDescriptionStyle}>{t.customDesc}</p>
-                <button style={startBtnStyle}>{t.openLibrary}</button>
+            <div className="flip-container">
+              <div className="flip-inner pro-glow">
+                <div className="flip-front" style={specialVisualArea}>
+                  <div style={refinedIconCircle}>✨</div>
+                  <div style={badgeContainer}><span style={disciplineBadge}>{t.personalization}</span></div>
+                </div>
+                <div className="flip-back" onClick={() => navigate("/avatars")}>
+                  <h3 style={cardHeaderStyle}>{t.customSelection}</h3>
+                  <p style={cardDescriptionStyle}>{t.customDesc}</p>
+                  <button style={startBtnStyle}>{t.openLibrary}</button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flip-container">
-            <div className="flip-inner pro-glow">
-              <div className="flip-front" style={specialVisualArea}>
-                <div style={refinedDashedCircle}>+</div>
-                <div style={badgeContainer}><span style={disciplineBadge}>{t.createAvatar}</span></div>
-              </div>
-              <div className="flip-back" onClick={() => navigate("/create-yourself")}>
-                <h3 style={cardHeaderStyle}>{t.yourAvatar}</h3>
-                <p style={cardDescriptionStyle}>{t.yourAvatarDesc}</p>
-                <button style={startBtnStyle}>{t.createNow}</button>
+            <div className="flip-container">
+              <div className="flip-inner pro-glow">
+                <div className="flip-front" style={specialVisualArea}>
+                  <div style={refinedDashedCircle}>+</div>
+                  <div style={badgeContainer}><span style={disciplineBadge}>{t.createAvatar}</span></div>
+                </div>
+                <div className="flip-back" onClick={() => navigate("/create-yourself")}>
+                  <h3 style={cardHeaderStyle}>{t.yourAvatar}</h3>
+                  <p style={cardDescriptionStyle}>{t.yourAvatarDesc}</p>
+                  <button style={startBtnStyle}>{t.createNow}</button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Settings Hub with Cleaner Logout */}
       <div style={settingsContainer}>
         {settingsOpen && (
           <div style={settingsMenu}>
@@ -270,14 +346,11 @@ export function SubjectAvatarsPage() {
                 <button onClick={() => setLang('en')} style={{ ...langToggleBtn, background: lang === 'en' ? '#3572ef' : 'transparent', color: '#fff' }}>EN</button>
               </div>
             </div>
-            {/* Logout Row */}
             <div style={{ ...settingsRow, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px', marginTop: '4px' }}>
                 <span style={{ color: '#ff453a' }}>{t.logout}</span>
                 <button className="logout-btn" onClick={handleLogout} style={logoutActionBtn}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M16 17L21 12L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
                   </svg>
                 </button>
             </div>
@@ -292,7 +365,20 @@ export function SubjectAvatarsPage() {
 }
 
 // --- Style Variables ---
-const pageWrapper: React.CSSProperties = { maxWidth: "1500px", width: "95%", margin: "0 auto", padding: "60px 0" };
+const pageWrapper: React.CSSProperties = {
+  height: "100dvh",
+  width: "100vw",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "transparent",
+  position: 'relative',
+  overflow: 'hidden',
+  margin: 0,
+  padding: 0
+};
+
+const contentWrapper: React.CSSProperties = { maxWidth: "1500px", width: "95%", zIndex: 1 };
 const headerLayout: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "60px", padding: "0 20px" };
 const titleTypography: React.CSSProperties = { fontSize: "52px", fontWeight: 800, letterSpacing: "-0.05em", margin: 0, color: "#ffffff" };
 const subtitleTypography: React.CSSProperties = { fontSize: "20px", color: "#8e8e93", marginTop: "12px", fontWeight: 400 };
@@ -324,7 +410,7 @@ const refinedArrowBtn: React.CSSProperties = {
   justifyContent: "center",
   transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
 };
-const refinedBackBtn: React.CSSProperties = { height: "56px", padding: "0 40px", borderRadius: "100px", fontWeight: 700, fontSize: "16px", border: "1px solid rgba(255,255,255,0.2)", cursor: 'pointer', color: '#fff', background: 'transparent' };
+const refinedBackBtn: React.CSSProperties = { height: "56px", padding: "0 40px", borderRadius: "100px", fontWeight: 700, fontSize: "16px", border: "1px solid rgba(255, 255, 255, 0.2)", cursor: 'pointer', color: '#fff', background: 'transparent' };
 const specialVisualArea: React.CSSProperties = { height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "28px", background: "#1c1c1e" };
 const refinedIconCircle: React.CSSProperties = { width: "110px", height: "110px", borderRadius: "50%", background: "linear-gradient(135deg, #3572ef, #5e5ce6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "48px", boxShadow: "0 25px 50px rgba(53, 114, 239, 0.4)" };
 const refinedDashedCircle: React.CSSProperties = { width: "110px", height: "110px", borderRadius: "50%", border: "2px dashed #48484a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "52px", color: "#48484a" };
@@ -338,4 +424,3 @@ const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px'
 const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#ffffff", padding: "8px", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" };
 
 export default SubjectAvatarsPage;
-
