@@ -553,7 +553,7 @@ export function CreateYourselfPage() {
             </div>
           </div>
         </div>
-        <button className="button-secondary" onClick={() => navigate("/mode")} style={{ ...refinedBackBtn, marginTop: "40px" }}>{t.back}</button>
+        <button className="button-secondary" onClick={() => navigate("/subjects")} style={{ ...refinedBackBtn, marginTop: "40px" }}>{t.back}</button>
       </div>
 
       <div style={settingsContainer}>
