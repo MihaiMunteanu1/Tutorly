@@ -71,6 +71,8 @@ type Interaction = {
   isProcessing?: boolean;
 };
 
+type JobStatus = { status: string; video_url?: string; error?: unknown; error_message?: string };
+
 export function ChatPage() {
   const { token, avatar, voice, setToken } = useAuth() as any;
   const navigate = useNavigate();
@@ -172,15 +174,17 @@ export function ChatPage() {
           avatar?.avatar_type === "talking_photo" ? (avatar?.id || "") : ""
         );
       const interval = setInterval(async () => {
-        const res = await getJobStatus(token, job_id);
-        if (res.status === "completed" && res.video_url) {
+        const res = (await getJobStatus(token, job_id)) as unknown as JobStatus;
+        const st = (res.status || "").toLowerCase();
+        if (st === "completed" && res.video_url) {
           setInteractions(prev => prev.map(item =>
             item.id === thinkingId ? { ...item, videoUrl: res.video_url, isProcessing: false } : item
           ));
           clearInterval(interval);
-        } else if (["failed", "error", "canceled"].includes(res.status.toLowerCase())) {
+        } else if (["failed", "error", "canceled", "cancelled"].includes(st)) {
+          const msg = res.error_message || (typeof res.error === "string" ? res.error : "Error.");
           setInteractions(prev => prev.map(item =>
-            item.id === thinkingId ? { ...item, text: "Error.", isProcessing: false } : item
+            item.id === thinkingId ? { ...item, text: msg, isProcessing: false } : item
           ));
           clearInterval(interval);
         }

@@ -83,6 +83,9 @@ class QuestionResponse(BaseModel):
 class QuestionStatusResponse(BaseModel):
     status: str
     video_url: Optional[str] = None
+    error: Optional[Any] = None
+    error_message: Optional[str] = None
+    raw_status: Optional[dict] = None
 
 class AvatarSelection(BaseModel):
     id: str
@@ -716,7 +719,45 @@ def get_question_status(job_id: str, user: str = Depends(get_current_user)):
         data = get_heygen_status(job_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"HeyGen error: {e}")
-    return QuestionStatusResponse(status=data.get("status", "unknown"), video_url=data.get("video_url"))
+
+    status = (data.get("status") or "unknown").lower()
+    completed_statuses = {"completed", "complete", "success", "done", "finished"}
+    failed_statuses = {"failed", "error", "canceled", "cancelled"}
+
+    video_url = data.get("video_url") or data.get("url")
+    raw_error = data.get("error") or data.get("message")
+
+    def _stringify_err(v: Any) -> Optional[str]:
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return v
+        # common HeyGen format: {"code": "...", "message": "..."}
+        if isinstance(v, dict):
+            msg = v.get("message") or v.get("msg")
+            code = v.get("code")
+            if code and msg:
+                return f"{code}: {msg}"
+            if msg:
+                return str(msg)
+            return str(v)
+        return str(v)
+
+    error_message = _stringify_err(raw_error)
+
+    out_status = status
+    if status in completed_statuses or (video_url and status not in failed_statuses):
+        out_status = "completed"
+    elif status in failed_statuses:
+        out_status = "failed"
+
+    return QuestionStatusResponse(
+        status=out_status,
+        video_url=video_url,
+        error=raw_error,
+        error_message=error_message,
+        raw_status=data,
+    )
 
 class ChatRequest(BaseModel):
     text: str
