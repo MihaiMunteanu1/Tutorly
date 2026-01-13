@@ -244,3 +244,23 @@ export async function livechatAgentStatus(token: string, sessionId: string): Pro
 
   return res.json();
 }
+
+export async function sendContactEmail(data: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  subject: string;
+  content: string;
+  to: string;
+}) {
+  const res = await fetch(`${API_URL}/api/send-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to send email");
+  }
+  return res.json();
+}

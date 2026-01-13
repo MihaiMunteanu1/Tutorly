@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../api";
+import { login, sendContactEmail } from "../api";
 import { useAuth } from "../auth/AuthContext";
 
 // --- Translation Dictionary ---
@@ -14,7 +14,20 @@ const TRANSLATIONS = {
     loading: "Se autentifică...",
     error: "Login eșuat. Verifică username/parola.",
     settings: "Setări",
-    languageLabel: "Limbă"
+    languageLabel: "Limbă",
+    teamLabel: "Ai nevoie de ajutor? Cunoaște echipa",
+    contactTitle: "Contactează pe",
+    formFirstName: "Prenume",
+    formLastName: "Nume",
+    formEmail: "Email-ul tău",
+    formSubject: "Subiect",
+    formContent: "Conținut",
+    btnSend: "Trimite",
+    btnCancel: "Anulează",
+    alertSent: "Mesajul a fost trimis cu succes!",
+    emailInvalid: "Adresa de email nu este validă.",
+    sendError: "A apărut o eroare la trimitere.",
+    sending: "Se trimite..."
   },
   en: {
     title: "Authentication",
@@ -25,9 +38,28 @@ const TRANSLATIONS = {
     loading: "Authenticating...",
     error: "Login failed. Check username/password.",
     settings: "Settings",
-    languageLabel: "Language"
+    languageLabel: "Language",
+    teamLabel: "Need help? Meet our team",
+    contactTitle: "Contact",
+    formFirstName: "First Name",
+    formLastName: "Last Name",
+    formEmail: "Your Email",
+    formSubject: "Subject",
+    formContent: "Content",
+    btnSend: "Send",
+    btnCancel: "Cancel",
+    alertSent: "Message sent successfully!",
+    emailInvalid: "Invalid email address.",
+    sendError: "Error sending message.",
+    sending: "Sending..."
   }
 };
+
+const TEAM_MEMBERS = [
+  { name: "Moise Ioana", initials: "MI", email: "ioana.moise@stud.ubbcluj.ro" },
+  { name: "Munteanu Mihai", initials: "MM", email: "mihai.munteanu@stud.ubbcluj.ro" },
+  { name: "Marginean Dan", initials: "MD", email: "dan.marginean@stud.ubbcluj.ro" }
+];
 
 export function LoginPage() {
   const { setToken } = useAuth();
@@ -41,6 +73,33 @@ export function LoginPage() {
   const [lang, setLang] = useState<'ro' | 'en'>('ro');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const t = TRANSLATIONS[lang];
+
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactTarget, setContactTarget] = useState<{ name: string; email: string } | null>(null);
+  const [contactData, setContactData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    subject: "",
+    content: ""
+  });
+  const [isSendingContact, setIsSendingContact] = useState(false);
+
+  // Generate snowflakes for the snow effect
+  const snowflakes = useMemo(() => {
+    return Array.from({ length: 50 }).map((_, i) => ({
+      id: i,
+      style: {
+        left: `${Math.random() * 100}%`,
+        animationDelay: `-${Math.random() * 10}s`,
+        animationDuration: `${10 + Math.random() * 15}s`,
+        opacity: 0.2 + Math.random() * 0.6,
+        width: `${4 + Math.random() * 6}px`,
+        height: `${4 + Math.random() * 6}px`
+      }
+    }));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,6 +115,48 @@ export function LoginPage() {
       setLoading(false);
     }
   }
+
+  const handleContactClick = (member: typeof TEAM_MEMBERS[0]) => {
+    setContactTarget(member);
+    setContactData({ firstName: "", lastName: "", email: "", subject: "", content: "" });
+    setContactOpen(true);
+  };
+
+  const validateEmail = (email: string) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+  };
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateEmail(contactData.email)) {
+      setNotification({ message: t.emailInvalid, type: 'error' });
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+
+    setIsSendingContact(true);
+
+    try {
+      await sendContactEmail({
+        ...contactData,
+        to: contactTarget?.email || ""
+      });
+
+      setContactOpen(false);
+      setNotification({ message: t.alertSent, type: 'success' });
+      setTimeout(() => setNotification(null), 4000);
+    } catch (error) {
+      console.error(error);
+      setNotification({ message: t.sendError, type: 'error' });
+    } finally {
+      setIsSendingContact(false);
+    }
+  };
 
   return (
     <div style={pageWrapper}>
@@ -131,7 +232,33 @@ export function LoginPage() {
           animation-delay: -10s;
         }
 
-        /* 3. Card Styling */
+        /* 3. Snow Effect */
+        .snow-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 1;
+        }
+        .snowflake {
+          position: absolute;
+          top: -20px;
+          background: white;
+          border-radius: 50%;
+          filter: blur(1px);
+          animation: fall linear infinite;
+        }
+        @keyframes fall {
+          0% { transform: translateY(-20px) translateX(0); }
+          25% { transform: translateY(25vh) translateX(15px); }
+          50% { transform: translateY(50vh) translateX(-15px); }
+          75% { transform: translateY(75vh) translateX(15px); }
+          100% { transform: translateY(110vh) translateX(0); }
+        }
+
+        /* 4. Card Styling */
         .login-card {
           background: rgba(28, 28, 30, 0.8);
           backdrop-filter: blur(40px);
@@ -143,7 +270,7 @@ export function LoginPage() {
           box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
           animation: fadeIn 0.8s ease-out;
           position: relative;
-          z-index: 1;
+          z-index: 10;
         }
 
         @keyframes fadeIn {
@@ -182,6 +309,96 @@ export function LoginPage() {
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .ring-spinner { width: 20px; height: 20px; border: 2px solid rgba(255, 255, 255, 0.3); border-top: 2px solid #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+        /* 5. Team Details */
+        details.team-details {
+          margin-top: 30px;
+          border-top: 1px solid rgba(255,255,255,0.1);
+          padding-top: 20px;
+          color: #8e8e93;
+        }
+        details.team-details summary {
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 600;
+          list-style: none;
+          text-align: center;
+          transition: color 0.2s;
+        }
+        details.team-details summary:hover {
+          color: #fff;
+        }
+        details.team-details summary::-webkit-details-marker {
+          display: none;
+        }
+        .team-list {
+          margin-top: 15px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          animation: fadeIn 0.3s ease-out;
+        }
+        .team-member {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          background: rgba(255,255,255,0.03);
+          padding: 8px 12px;
+          border-radius: 12px;
+        }
+        .avatar-circle {
+          width: 32px; height: 32px;
+          background: linear-gradient(135deg, #3572ef, #6432c8);
+          border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 12px; font-weight: 700; color: #fff;
+        }
+        .member-info { flex: 1; font-size: 13px; color: #fff; }
+        .member-email { color: #8e8e93; text-decoration: none; font-size: 16px; transition: color 0.2s; }
+        .member-email:hover { color: #3572ef; }
+
+        .member-email-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 16px;
+          transition: transform 0.2s;
+          padding: 0;
+          filter: grayscale(100%);
+          opacity: 0.7;
+        }
+        .member-email-btn:hover {
+          transform: scale(1.2);
+          filter: grayscale(0%);
+          opacity: 1;
+        }
+
+        .modal-overlay {
+          position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+          background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+          z-index: 2000; display: flex; align-items: center; justify-content: center;
+          animation: fadeIn 0.3s ease-out;
+        }
+        .modal-card {
+          background: rgba(28, 28, 30, 0.95); border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 24px; padding: 30px; width: 90%; max-width: 500px;
+          box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .notification-toast {
+          position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
+          background: rgba(30, 30, 35, 0.95); border: 1px solid rgba(255,255,255,0.1);
+          padding: 12px 24px; border-radius: 50px; color: #fff; z-index: 3000;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.6); font-weight: 600;
+          display: flex; align-items: center; gap: 10px;
+          animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .notification-toast.success { border-color: #30d158; color: #30d158; }
+        .notification-toast.error { border-color: #ff453a; color: #ff453a; }
+        @keyframes slideDown {
+          from { transform: translate(-50%, -100px); opacity: 0; }
+          to { transform: translate(-50%, 0); opacity: 1; }
+        }
       `}</style>
 
       {/* FIXED BACKGROUND LAYER */}
@@ -190,6 +407,19 @@ export function LoginPage() {
         <div className="blob blob-2"></div>
         <div className="blob blob-3"></div>
       </div>
+
+      {/* SNOW LAYER */}
+      <div className="snow-container">
+        {snowflakes.map(flake => (
+          <div key={flake.id} className="snowflake" style={flake.style} />
+        ))}
+      </div>
+
+      {notification && (
+        <div className={`notification-toast ${notification.type}`}>
+          {notification.type === 'success' ? '✓' : '✕'} {notification.message}
+        </div>
+      )}
 
       <div className="login-card">
         <h1 style={titleTypography}>{t.title}</h1>
@@ -245,6 +475,23 @@ export function LoginPage() {
             ) : t.loginBtn}
           </button>
         </form>
+
+        <details className="team-details">
+          <summary>{t.teamLabel}</summary>
+          <div className="team-list">
+            {TEAM_MEMBERS.map((member, idx) => (
+              <div key={idx} className="team-member">
+                <div className="avatar-circle">{member.initials}</div>
+                <div className="member-info"><strong>{member.name}</strong></div>
+                <button
+                  onClick={() => handleContactClick(member)}
+                  className="member-email-btn"
+                  title="Send email"
+                >✉️</button>
+              </div>
+            ))}
+          </div>
+        </details>
       </div>
 
       <div style={settingsContainer}>
@@ -264,6 +511,41 @@ export function LoginPage() {
           {settingsOpen ? '✕' : '⚙'}
         </button>
       </div>
+
+      {contactOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h2 style={{ ...titleTypography, fontSize: '24px', marginBottom: '20px' }}>
+              {t.contactTitle} {contactTarget?.name}
+            </h2>
+            <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <input className="custom-input" placeholder={t.formLastName} required
+                  value={contactData.lastName} onChange={e => setContactData({ ...contactData, lastName: e.target.value })} />
+                <input className="custom-input" placeholder={t.formFirstName} required
+                  value={contactData.firstName} onChange={e => setContactData({ ...contactData, firstName: e.target.value })} />
+              </div>
+              <input className="custom-input" type="email" placeholder={t.formEmail} required
+                value={contactData.email} onChange={e => setContactData({ ...contactData, email: e.target.value })} />
+              <input className="custom-input" placeholder={t.formSubject} required
+                value={contactData.subject} onChange={e => setContactData({ ...contactData, subject: e.target.value })} />
+              <textarea className="custom-input" placeholder={t.formContent} rows={4} required
+                value={contactData.content} onChange={e => setContactData({ ...contactData, content: e.target.value })}
+                style={{ resize: 'vertical', minHeight: '80px' }} />
+              
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button type="button" onClick={() => setContactOpen(false)}
+                  style={{ ...loginButtonStyle, flex: 1, background: 'rgba(255,255,255,0.1)', boxShadow: 'none' }}>
+                  {t.btnCancel}
+                </button>
+                <button type="submit" style={{ ...loginButtonStyle, flex: 1 }} disabled={isSendingContact}>
+                  {isSendingContact ? t.sending : t.btnSend}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

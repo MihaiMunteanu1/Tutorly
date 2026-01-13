@@ -38,7 +38,7 @@ export default function IntroPage() {
       <style>{`
         html, body, #root {
           margin: 0; padding: 0; width: 100%; height: 100%;
-          overflow: hidden; background-color: #020617;
+          overflow: hidden; background-color: #000000;
           font-family: 'Inter', -apple-system, sans-serif;
         }
 
@@ -48,6 +48,11 @@ export default function IntroPage() {
           33% { transform: translate(50px, -70px) scale(1.1); }
           66% { transform: translate(-30px, 30px) scale(0.95); }
           100% { transform: translate(0px, 0px) scale(1); }
+        }
+
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         .background-blobs {
@@ -60,12 +65,18 @@ export default function IntroPage() {
           animation: blob 18s infinite ease-in-out alternate; border-radius: 50%;
         }
 
-        .blob-1 { top: 10%; left: 10%; width: 600px; height: 600px; background: rgba(53, 114, 239, 0.4); animation-delay: 0s; }
-        .blob-2 { bottom: 10%; right: 15%; width: 700px; height: 700px; background: rgba(100, 50, 200, 0.3); animation-delay: -5s; }
-        .blob-3 { top: 40%; left: 30%; width: 500px; height: 500px; background: rgba(53, 114, 239, 0.2); animation-delay: -10s; }
+        .blob-1 { top: 0%; left: 10%; width: 700px; height: 700px; background: radial-gradient(circle, rgba(79, 70, 229, 0.25) 0%, rgba(0,0,0,0) 70%); animation-delay: 0s; }
+        .blob-2 { bottom: 0%; right: 10%; width: 800px; height: 800px; background: radial-gradient(circle, rgba(147, 51, 234, 0.2) 0%, rgba(0,0,0,0) 70%); animation-delay: -5s; }
+        .blob-3 { top: 30%; left: 30%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(0,0,0,0) 70%); animation-delay: -10s; }
         
+        /* Animation Classes */
+        .animate-entry { opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+
         /* Button Hover Effect */
-        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(53, 114, 239, 0.4) !important; }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(79, 70, 229, 0.6) !important; border-color: rgba(255,255,255,0.4) !important; }
       `}</style>
 
       {/* 2. Background Layers */}
@@ -79,19 +90,20 @@ export default function IntroPage() {
       <Snowfall
         style={{ position: 'fixed', width: '100vw', height: '100vh', zIndex: 1 }}
         color="white"
-        snowflakeCount={150}
+        snowflakeCount={100}
         radius={[0.5, 2.5]}
-        speed={[0.5, 2.5]}
+        speed={[0.2, 1.5]}
         wind={[-0.5, 1.5]}
+        opacity={[0.1, 0.4]}
       />
 
       {/* 3. Main Glassmorphic Content Card */}
       <main style={heroContainer}>
-        <h1 style={heroTitle}>{t.title}</h1>
-        <p style={heroSubtitle}>{t.subtitle}</p>
+        <h1 className="animate-entry delay-1" style={heroTitle}>{t.title}</h1>
+        <p className="animate-entry delay-2" style={heroSubtitle}>{t.subtitle}</p>
 
         <button
-            className="login-btn"
+            className="login-btn animate-entry delay-3"
             onClick={() => navigate("/login")}
             style={loginButtonStyle}
         >
@@ -134,7 +146,7 @@ const pageWrapper: React.CSSProperties = {
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  background: 'transparent',
+  background: 'linear-gradient(to bottom, #050505, #0a0a0a)',
   position: 'relative',
   overflow: 'hidden',
 };
@@ -144,50 +156,51 @@ const heroContainer: React.CSSProperties = {
   zIndex: 10,
   width: '90%',
   maxWidth: '500px',
-  padding: '48px 32px',
+  padding: '60px 40px',
   textAlign: 'center',
-  background: 'rgba(28, 28, 30, 0.75)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: '32px',
+  background: 'rgba(255, 255, 255, 0.03)',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  borderRadius: '24px',
   backdropFilter: 'blur(40px)',
-  boxShadow: '0 30px 60px rgba(0, 0, 0, 0.5)',
+  boxShadow: '0 40px 80px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255,255,255,0.05)',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: '24px',
+  gap: '32px',
 };
 
 const heroTitle: React.CSSProperties = {
   margin: 0,
-  fontSize: '36px',
-  fontWeight: 800,
-  background: 'linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%)',
+  fontSize: '42px',
+  fontWeight: 700,
+  background: 'linear-gradient(180deg, #ffffff 0%, #94a3b8 100%)',
   WebkitBackgroundClip: 'text',
   WebkitTextFillColor: 'transparent',
-  letterSpacing: '-0.02em',
+  letterSpacing: '-0.03em',
+  lineHeight: 1.1,
 };
 
 const heroSubtitle: React.CSSProperties = {
   margin: 0,
-  fontSize: '16px',
+  fontSize: '17px',
   lineHeight: 1.6,
-  color: 'rgba(255, 255, 255, 0.7)',
-  fontWeight: 500,
+  color: '#94a3b8',
+  fontWeight: 400,
   maxWidth: '400px',
 };
 
 const loginButtonStyle: React.CSSProperties = {
-  background: '#3572ef',
+  background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
   color: 'white',
-  border: 'none',
-  padding: '16px 48px',
-  borderRadius: '100px',
-  fontWeight: 700,
+  border: '1px solid rgba(255,255,255,0.1)',
+  padding: '18px 48px',
+  borderRadius: '16px',
+  fontWeight: 600,
   fontSize: '16px',
   cursor: 'pointer',
-  boxShadow: '0 8px 20px rgba(53, 114, 239, 0.3)',
-  transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
-  marginTop: '16px',
+  boxShadow: '0 4px 20px rgba(79, 70, 229, 0.4)',
+  transition: 'all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
+  marginTop: '8px',
   width: '100%',
   maxWidth: '300px',
 };
@@ -195,17 +208,17 @@ const loginButtonStyle: React.CSSProperties = {
 const footerStyle: React.CSSProperties = {
     position: 'absolute',
     bottom: '20px',
-    color: 'rgba(255,255,255,0.3)',
+    color: 'rgba(255,255,255,0.2)',
     fontSize: '12px',
-    fontWeight: 500,
+    fontWeight: 400,
     zIndex: 10,
 };
 
 // --- Settings Styles (Copied from Login) ---
 const settingsContainer: React.CSSProperties = { position: 'fixed', bottom: '40px', right: '40px', zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "15px" };
-const settingsFab: React.CSSProperties = { width: '56px', height: '56px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(25, 25, 25, 0.8)', color: '#fff', backdropFilter: 'blur(10px)', cursor: 'pointer', fontSize: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' };
-const settingsMenu: React.CSSProperties = { width: '240px', padding: '20px', borderRadius: '24px', background: 'rgba(28, 28, 30, 0.95)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)', color: '#fff', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' };
-const settingsMenuHeader: React.CSSProperties = { fontSize: '16px', fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' };
+const settingsFab: React.CSSProperties = { width: '50px', height: '50px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255, 255, 255, 0.05)', color: '#fff', backdropFilter: 'blur(10px)', cursor: 'pointer', fontSize: '20px', boxShadow: '0 8px 32px rgba(0,0,0,0.3)', transition: 'background 0.2s' };
+const settingsMenu: React.CSSProperties = { width: '220px', padding: '16px', borderRadius: '16px', background: 'rgba(20, 20, 20, 0.8)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)', color: '#fff', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' };
+const settingsMenuHeader: React.CSSProperties = { fontSize: '14px', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px', color: '#94a3b8' };
 const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', fontWeight: 600 };
 const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '2px' };
-const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 };
+const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, transition: 'all 0.2s' };

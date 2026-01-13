@@ -1,4 +1,7 @@
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import tempfile
 from datetime import datetime, timedelta
 from functools import lru_cache
@@ -108,6 +111,14 @@ class VoiceSelection(BaseModel):
 class SelectionPayload(BaseModel):
     avatar: AvatarSelection
     voice: VoiceSelection
+
+class ContactEmailRequest(BaseModel):
+    firstName: str
+    lastName: str
+    email: str
+    subject: str
+    content: str
+    to: str
 
 app = FastAPI(title="Tutor Avatar API")
 
@@ -620,6 +631,58 @@ def set_photo_avatar(
     }
     return {"ok": True}
 
+# --- NEW: Email Sending Endpoint ---
+
+@app.post("/api/send-email")
+def send_email(req: ContactEmailRequest):
+    # Configurare SMTP - Poti pune aceste valori in .env
+    # Exemplu pentru Gmail: server="smtp.gmail.com", port=587
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user = os.getenv("SMTP_USERNAME", "") 
+    smtp_pass = os.getenv("SMTP_PASSWORD", "") 
+
+    # Daca nu avem credentiale, simulam trimiterea (print in consola serverului)
+    if not smtp_user or not smtp_pass:
+        print(f"\n=== SIMULARE EMAIL (Configureaza SMTP in .env pentru live) ===")
+        print(f"Catre: {req.to}")
+        print(f"De la: {req.firstName} {req.lastName} <{req.email}>")
+        print(f"Subiect: {req.subject}")
+        print(f"Mesaj:\n{req.content}")
+        print("==============================================================\n")
+        # Returnam succes pentru a nu bloca interfata
+        return {"message": "Email simulated (check backend console)"}
+
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = smtp_user
+        msg['To'] = req.to
+        msg['Subject'] = f"[Contact App] {req.subject}"
+        msg['Reply-To'] = req.email
+
+        body = f"""
+Ai primit un mesaj nou prin aplicatia Avatar.
+
+Expeditor: {req.firstName} {req.lastName}
+Email expeditor: {req.email}
+
+Mesaj:
+{req.content}
+        """
+        msg.attach(MIMEText(body, 'plain'))
+
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        text = msg.as_string()
+        server.sendmail(smtp_user, req.to, text)
+        server.quit()
+        
+        return {"message": "Email sent successfully"}
+    except Exception as e:
+        print(f"SMTP Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+
 # --- Existing endpoints (unchanged) ---
 
 @app.post("/questions", response_model=QuestionResponse)
@@ -1046,4 +1109,3 @@ def livechat_agent_stop(
 
     loop.create_task(AGENT_MANAGER.stop(req.session_id))
     return LiveAvatarStopResponse(ok=True)
-
