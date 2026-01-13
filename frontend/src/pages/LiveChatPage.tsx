@@ -18,8 +18,28 @@ type LiveSessionState = {
 };
 
 function getErrorMessage(e: unknown): string {
-  if (e instanceof Error) return e.message;
-  return String(e);
+  let msg = e instanceof Error ? e.message : String(e);
+
+  try {
+    // Parse "Livechat start failed: 403 {...}"
+    const openBrace = msg.indexOf('{');
+    if (openBrace !== -1) {
+      const prefix = msg.substring(0, openBrace).trim();
+      const jsonPart = msg.substring(openBrace);
+      const parsed = JSON.parse(jsonPart);
+
+      if (parsed.detail) {
+        let detail = parsed.detail;
+        // detail might be a nested JSON string
+        if (typeof detail === 'string' && detail.trim().startsWith('{')) {
+           try { const inner = JSON.parse(detail); if (inner.message) detail = inner.message; } catch {}
+        }
+        return `${prefix} -> ${detail}`;
+      }
+    }
+  } catch {}
+
+  return msg;
 }
 
 type LivekitState = {
@@ -36,7 +56,6 @@ export function LiveChatPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("idle");
-  const [inputText, setInputText] = useState<string>("");
 
   const [session, setSession] = useState<LiveSessionState>({});
   const [lk, setLk] = useState<LivekitState>({});
@@ -53,6 +72,8 @@ export function LiveChatPage() {
   useEffect(() => {
     if (!hasAuth) navigate("/login");
   }, [hasAuth, navigate]);
+
+
 
   function cleanupAttachedAudio() {
     for (const el of attachedAudioElsRef.current) {
@@ -252,34 +273,6 @@ export function LiveChatPage() {
     }
   }
 
-  async function handleSendText() {
-    const text = inputText.trim();
-    if (!text) return;
-
-    setBusy(true);
-    setErr(null);
-
-    try {
-      const room = lk.room;
-      if (!room) throw new Error("LiveKit not connected");
-
-      // comanda către agent (FULL mode)
-      const payload = { event_type: "avatar.speak_text", text };
-      const bytes = new TextEncoder().encode(JSON.stringify(payload));
-
-      await room.localParticipant.publishData(bytes, {
-        reliable: true,
-        topic: "agent-control",
-      });
-
-      setInputText("");
-    } catch (e: unknown) {
-      setErr(getErrorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function handleVoiceToggle() {
     setBusy(true);
     setErr(null);
@@ -347,70 +340,70 @@ export function LiveChatPage() {
   return (
     <div style={page}>
       <div style={topBar}>
-        <button onClick={() => navigate("/mode")} style={btnSecondary}>
-          ← Back
-        </button>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ color: "#a1a1a6", fontSize: 13 }}>Status: {status}</span>
+        <div style={{ display: "flex",height:50, alignItems: "center", gap: 16 }}>
+          <button onClick={() => navigate("/mode")} style={btnSecondary}>
+            ← Back
+          </button>
+          <div style={statusBadge}>
+            <div style={{
+              width: 8, height: 8, borderRadius: "50%",
+              backgroundColor: status === "running" ? "#10b981" : (status === "error" ? "#ef4444" : "#f59e0b"),
+              boxShadow: status === "running" ? "0 0 8px #10b981" : "none"
+            }} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              {status}
+            </span>
+          </div>
+        </div>
 
-          <button disabled={startDisabled} onClick={handleStart} style={btnPrimary}>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <button disabled={startDisabled} onClick={handleStart} style={startDisabled ? btnDisabled : btnPrimary}>
             Start session
           </button>
 
-          <button disabled={stopDisabled} onClick={handleStop} style={btnDanger}>
+          <button disabled={stopDisabled} onClick={handleStop} style={stopDisabled ? btnDisabled : btnDanger}>
             Stop
-          </button>
-
-          <button disabled={busy || status !== "running"} onClick={handleVoiceToggle} style={btnPrimary}>
-            {voiceActive ? "Stop Voice" : "Start Voice"}
-          </button>
-
-          <button disabled={busy || !voiceActive} onClick={handleMuteToggle} style={btnSecondary}>
-            {voiceMuted ? "Unmute" : "Mute"}
           </button>
         </div>
       </div>
 
       {err && (
         <div style={errorBox}>
-          <strong>LiveChat error:</strong> {err}
+          <div style={{ fontSize: 18 }}>⚠️</div>
+          <div><strong>Error:</strong> {err}</div>
         </div>
       )}
 
       <div style={layout}>
         <div style={leftPane}>
           <div style={card}>
-            <div style={cardTitle}>Avatar</div>
-            <div style={avatarBox}>
-              <video ref={videoRef} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
-            <div style={{ marginTop: 10, color: "#8e8e93", fontSize: 12 }}>
-              Tip: click pe "Start Voice" și acceptă permisiunea de microfon.
-            </div>
-          </div>
-        </div>
-
-        <div style={rightPane}>
-          <div style={card}>
-            <div style={cardTitle}>Text to avatar</div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <input
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder="Scrie un mesaj pentru avatar…"
-                style={input}
-              />
-              <button disabled={busy || status !== "running"} onClick={handleSendText} style={btnPrimary}>
-                Send
-              </button>
-            </div>
-
-            <div style={{ marginTop: 14, padding: 12, borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)", color: "#c7c7cc", fontSize: 12 }}>
-              <div>
-                <strong>Session:</strong> {session.sessionId || "-"}
+            <div style={cardHeader}>
+              <div style={cardTitle}>Avatar Stream</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button disabled={busy || status !== "running"} onClick={handleVoiceToggle} style={voiceActive ? btnActive : btnSecondarySmall}>
+                  {voiceActive ? "Mic On 🎙️" : "Mic Off 🔇"}
+                </button>
+                <button disabled={busy || !voiceActive} onClick={handleMuteToggle} style={voiceMuted ? btnDangerSmall : btnSecondarySmall}>
+                  {voiceMuted ? "Unmuted" : "Muted"}
+                </button>
               </div>
-              <div style={{ wordBreak: "break-all" }}>
-                <strong>LiveKit Url:</strong> {session.livekitUrl || "-"}
+            </div>
+            <div style={avatarBox}>
+              <video ref={videoRef} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: status === "running" ? 1 : 0, transition: "opacity 0.5s" }} />
+              {status !== "running" && (
+                <div style={placeholderOverlay}>
+                  <div style={{ color: "rgba(255,255,255,0.5)" }}>Waiting for session...</div>
+                </div>
+              )}
+            </div>
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #334155", display: "flex", gap: 24, fontSize: 12, color: "#94a3b8" }}>
+              <div>
+                <span>Session: </span>
+                <span style={{ fontFamily: "monospace", color: "#e2e8f0" }}>{session.sessionId || "—"}</span>
+              </div>
+              <div>
+                <span>LiveKit: </span>
+                <span style={{ fontFamily: "monospace", color: "#e2e8f0" }}>{session.livekitUrl || "—"}</span>
               </div>
             </div>
           </div>
@@ -423,9 +416,12 @@ export function LiveChatPage() {
 // --- styles (nemodificate) ---
 const page: React.CSSProperties = {
   minHeight: "100vh",
+    width: 1500,
   padding: 24,
-  background: "radial-gradient(circle at top, #1e293b 0, #020617 55%)",
-  color: "#fff",
+  background: "#0f172a",
+  color: "#f8fafc",
+  fontFamily: "'Inter', sans-serif", 
+    borderRadius: 9
 };
 
 const topBar: React.CSSProperties = {
@@ -438,69 +434,124 @@ const topBar: React.CSSProperties = {
 
 const layout: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1.3fr 1fr",
+  gridTemplateColumns: "1fr",
   gap: 18,
 };
 
 const leftPane: React.CSSProperties = { minWidth: 0 };
-const rightPane: React.CSSProperties = { minWidth: 0 };
 
 const card: React.CSSProperties = {
-  background: "rgba(28, 28, 30, 0.6)",
-  border: "1px solid rgba(255, 255, 255, 0.08)",
+  background: "#1e293b",
+  border: "1px solid #334155",
   borderRadius: 24,
-  padding: 18,
-  backdropFilter: "blur(20px)",
+  padding: 24,
+  display: "flex",
+  flexDirection: "column",
+  height: "100%",
 };
 
-const cardTitle: React.CSSProperties = { fontWeight: 800, marginBottom: 12 };
+const cardHeader: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 16,
+};
+
+const cardTitle: React.CSSProperties = { fontWeight: 700, fontSize: 18, color: "#fff" };
 
 const avatarBox: React.CSSProperties = {
   width: "100%",
-  minHeight: 520,
+  height: 600,
   borderRadius: 18,
   overflow: "hidden",
-  background: "rgba(0,0,0,0.35)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  background: "#020617",
+  border: "1px solid #334155",
+  position: "relative",
 };
 
-const input: React.CSSProperties = {
-  flex: 1,
-  padding: "12px 14px",
-  borderRadius: 14,
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(0,0,0,0.35)",
-  color: "#fff",
-  outline: "none",
+const placeholderOverlay: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 const btnBase: React.CSSProperties = {
-  border: "1px solid rgba(255,255,255,0.12)",
-  borderRadius: 14,
-  padding: "10px 14px",
+  border: "none",
+  borderRadius: 12,
+  padding: "10px 20px",
   cursor: "pointer",
-  color: "#fff",
-  background: "rgba(255,255,255,0.06)",
+  fontWeight: 600,
+  fontSize: 14,
+  transition: "all 0.2s",
 };
 
 const btnPrimary: React.CSSProperties = {
   ...btnBase,
-  background: "rgba(53, 114, 239, 0.25)",
-  borderColor: "rgba(53, 114, 239, 0.45)",
+  background: "#3b82f6",
+  color: "#fff",
 };
 
 const btnDanger: React.CSSProperties = {
   ...btnBase,
-  background: "rgba(255, 69, 58, 0.18)",
-  borderColor: "rgba(255, 69, 58, 0.45)",
+  background: "#ef4444",
+  color: "#fff",
 };
 
-const btnSecondary: React.CSSProperties = { ...btnBase };
+const btnSecondary: React.CSSProperties = {
+  ...btnBase,
+  background: "#334155",
+  color: "#e2e8f0",
+};
+
+const btnDisabled: React.CSSProperties = {
+  ...btnBase,
+  background: "#1e293b",
+  color: "#64748b",
+  cursor: "not-allowed",
+  border: "1px solid #334155",
+};
+
+const btnActive: React.CSSProperties = {
+  ...btnBase,
+  background: "#10b981",
+  color: "#fff",
+  padding: "8px 14px",
+  fontSize: 12,
+};
+
+const btnSecondarySmall: React.CSSProperties = {
+  ...btnSecondary,
+  padding: "8px 14px",
+  fontSize: 12,
+};
+
+const btnDangerSmall: React.CSSProperties = {
+  ...btnDanger,
+  padding: "8px 14px",
+  fontSize: 12,
+};
 
 const errorBox: React.CSSProperties = {
   marginBottom: 16,
-  background: "rgba(255, 69, 58, 0.1)",
-  border: "1px solid rgba(255, 69, 58, 0.35)",
-  borderRadius: 16,
-  padding: 12,
+  background: "#450a0a",
+  border: "1px solid #991b1b",
+  borderRadius: 12,
+  padding: 16,
+  color: "#fecaca",
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+};
+
+const statusBadge: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  background: "#1e293b",
+  padding: "6px 12px",
+  borderRadius: 20,
+  border: "1px solid #334155",
 };

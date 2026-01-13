@@ -264,3 +264,21 @@ export async function sendContactEmail(data: {
   }
   return res.json();
 }
+
+export async function chat(token: string, text: string): Promise<{ text: string }> {
+  const res = await fetch(`${API_URL}/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ text }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Chat failed: ${res.status} ${errText}`);
+  }
+
+  return res.json();
+}
