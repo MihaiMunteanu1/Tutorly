@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@heygen/liveavatar-web-sdk": "^0.0.10",
+    "@tsparticles/react": "^3.0.0",
+    "@tsparticles/slim": "^3.9.1",
     "katex": "^0.16.27",
     "livekit-client": "^2.17.0",
     "react": "^19.2.0",
