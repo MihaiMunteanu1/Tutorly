@@ -1,6 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+// --- ADD THESE 3 NEW LINES ---
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css'; // <--- This makes the math symbols look right
 
 const API_URL = "http://localhost:8000";
 
@@ -248,6 +256,18 @@ export function TextChatPage() {
           display: block;
         }
 
+        .ai-bubble p, .user-bubble p {
+          margin: 0 0 10px 0;
+        }
+        .ai-bubble p:last-child, .user-bubble p:last-child {
+          margin-bottom: 0;
+        }
+        .ai-bubble pre {
+          background: transparent !important; /* Let syntax highlighter handle bg */
+          margin: 10px 0;
+          border-radius: 8px;
+          overflow-x: auto;
+        }
         .floating-back {
           position: fixed; top: 40px; left: 40px; z-index: 1000;
           background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
@@ -280,7 +300,31 @@ export function TextChatPage() {
             messages.map(m => (
               <div key={m.id} className={`bubble ${m.role === 'user' ? 'user-bubble' : 'ai-bubble'}`}>
                 <span className="bubble-label">{m.role === 'user' ? 'User' : 'Assistant'}</span>
-                {m.text}
+               <ReactMarkdown
+  children={m.text}
+  remarkPlugins={[remarkMath]}   // 1. Parses the math syntax ($...$)
+  rehypePlugins={[rehypeKatex]}  // 2. Renders it using KaTeX
+  components={{
+    code(props: any) {
+      const {children, className, node, ...rest} = props
+      const match = /language-(\w+)/.exec(className || '')
+      return match ? (
+        <SyntaxHighlighter
+          {...rest}
+          PreTag="div"
+          children={String(children).replace(/\n$/, '')}
+          language={match[1]}
+          style={vscDarkPlus}
+        />
+      ) : (
+        <code {...rest} className={className}>
+          {children}
+        </code>
+      )
+    }
+  }}
+/>
+
               </div>
             ))
           )}

@@ -10,6 +10,7 @@ import { TextChatPage } from "./pages/TextChatPage";
 import { CreateYourselfPage } from "./pages/CreateYourselfPage";
 import ModePickerPage from "./pages/ModePickerPage";
 import { LiveChatPage } from "./pages/LiveChatPage";
+import IntroPage from "./pages/IntroPage";
 
 export function App() {
   return (
@@ -20,6 +21,7 @@ export function App() {
 
           <main className="app-main">
             <Routes>
+              <Route path={"/"} element={<IntroPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/subjects" element={<SubjectAvatarsPage />} />
               <Route path="/create-yourself" element={<CreateYourselfPage />} />
