@@ -153,8 +153,8 @@ export function LiveChatPage() {
     try {
       // 1) token cu avatar/voice/context alese
       const tokenResp = await livechatCreateToken(token, {
-        avatar_id: avatar?.id,
-        voice_id: voice?.id,
+        //avatar_id: avatar?.id,
+        //voice_id: voice?.id,
         context_id: contextId,
         mode: "FULL",
         language: "en",
