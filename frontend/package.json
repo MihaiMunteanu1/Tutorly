@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@heygen/liveavatar-web-sdk": "^0.0.10",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.9.1",
     "katex": "^0.16.27",
@@ -22,7 +24,8 @@
     "react-snowfall": "^2.4.0",
     "react-syntax-highlighter": "^16.1.0",
     "rehype-katex": "^7.0.1",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "three": "^0.182.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

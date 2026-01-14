@@ -6,25 +6,25 @@ import { useAuth } from "../auth/AuthContext";
 // --- Translation Dictionary ---
 const TRANSLATIONS = {
   ro: {
-    title: "Alege Vocea Tutorului",
-    subtitle: "Selectează tonul perfect pentru expertul tău digital.",
-    loading: "Se încarcă vocile...",
-    error: "Nu pot încărca vocile. Verifică backend-ul.",
+    title: "Vibrația Tutorului",
+    subtitle: "Sistem online. Configurează profilul acustic al expertului tău.",
+    loading: "Se calibrează frecvențele...",
+    error: "Eroare de conexiune. Nu s-au putut prelua profilele vocale.",
     back: "Înapoi",
     select: "Selectează Vocea",
-    noAudio: "Fără preview audio disponibil",
+    noAudio: "Fără previzualizare",
     settings: "Setări",
     languageLabel: "Limbă",
     logout: "Deconectare"
   },
   en: {
-    title: "Choose Tutor Voice",
-    subtitle: "Select the perfect tone for your digital expert.",
-    loading: "Loading voices...",
-    error: "Could not load voices. Check the backend.",
+    title: "Tutor Vibration",
+    subtitle: "System online. Configure the acoustic profile of your expert.",
+    loading: "Calibrating frequencies...",
+    error: "Connection error. Could not retrieve voice profiles.",
     back: "Back",
     select: "Select Voice",
-    noAudio: "No audio preview available",
+    noAudio: "No preview available",
     settings: "Settings",
     languageLabel: "Language",
     logout: "Logout"
@@ -44,7 +44,7 @@ export function VoiceSelectionPage() {
 
   useEffect(() => {
     if (!token) { navigate("/login"); return; }
-    if (!avatar) { navigate("/avatars"); return; }
+    if (!avatar) { navigate("/subjects"); return; }
 
     (async () => {
       try {
@@ -63,10 +63,7 @@ export function VoiceSelectionPage() {
     navigate("/mode-selection");
   }
 
-  const handleLogout = () => {
-    setToken(null);
-    navigate("/login");
-  };
+  const handleLogout = () => { setToken(null); navigate("/login"); };
 
   if (!token || !avatar) return null;
 
@@ -75,168 +72,135 @@ export function VoiceSelectionPage() {
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
       <style>{`
-        /* 1. Global Reset - Exactly as LoginPage */
-        html, body, #root {
-          margin: 0;
-          padding: 0;
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
-          background-color: #020617;
-        }
-
+        html, body, #root { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #010409; }
         * { font-family: 'Inter', -apple-system, sans-serif; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
         
-        /* 2. Hidden Scrollbar Logic */
-        .hide-scrollbar {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; overflow-y: auto !important; height: 100vh; }
+
+        .background-blobs { position: fixed; inset: -10%; width: 120vw; height: 120vh; overflow: hidden; z-index: 0; pointer-events: none; opacity: 0.6; }
+        .blob { position: absolute; filter: blur(140px); border-radius: 50%; mix-blend-mode: screen; }
+        .blob-1 { top: 10%; left: 15%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(53, 114, 239, 0.3) 0%, transparent 70%); animation: drift 25s infinite alternate ease-in-out; }
+        .blob-2 { bottom: 10%; right: 10%; width: 45vw; height: 45vw; background: radial-gradient(circle, rgba(100, 50, 200, 0.2) 0%, transparent 70%); animation: drift 20s infinite alternate-reverse ease-in-out; }
+
+        @keyframes drift { from { transform: translate(0, 0) rotate(0deg); } to { transform: translate(100px, -80px) rotate(15deg); } }
+
+        .living-title {
+          background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+          text-shadow: 0 0 40px rgba(53, 114, 239, 0.2);
         }
 
-        /* 3. Seamless Background Animation */
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(50px, -70px) scale(1.1); }
-          66% { transform: translate(-30px, 30px) scale(0.95); }
-          100% { transform: translate(0px, 0px) scale(1); }
+        .elegant-entry { 
+          opacity: 0; 
+          animation: elegantEntry 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
         }
 
-        .background-blobs {
-          position: fixed;
-          top: -10%;
-          left: -10%;
-          width: 120vw;
-          height: 120vh;
-          overflow: hidden;
-          z-index: 0;
-          pointer-events: none;
-        }
-
-        .blob {
-          position: absolute;
-          filter: blur(120px);
-          opacity: 0.35;
-          animation: blob 18s infinite ease-in-out alternate;
-          border-radius: 50%;
-        }
-
-        .blob-1 {
-          top: 10%; left: 10%;
-          width: 600px; height: 600px;
-          background: rgba(53, 114, 239, 0.4); 
-          animation-delay: 0s;
-        }
-
-        .blob-2 {
-          bottom: 10%; right: 15%;
-          width: 700px; height: 700px;
-          background: rgba(100, 50, 200, 0.3); 
-          animation-delay: -5s;
-        }
-
-        .blob-3 {
-          top: 40%; left: 30%;
-          width: 500px; height: 500px;
-          background: rgba(53, 114, 239, 0.2); 
-          animation-delay: -10s;
-        }
-
-        /* 4. Page Elements */
-        .content-layer {
-          position: relative;
-          z-index: 1;
-          width: 100%;
-          max-width: 1200px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-
-        .voice-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 24px;
-          width: 100%;
-          margin-top: 20px;
-          padding-bottom: 120px; /* Space for settings fab */
+        @keyframes elegantEntry {
+          from { opacity: 0; filter: blur(15px); transform: translateY(25px); }
+          to { opacity: 1; filter: blur(0); transform: translateY(0); }
         }
 
         .voice-card {
-          background: rgba(28, 28, 30, 0.6);
-          backdrop-filter: blur(30px);
-          border-radius: 28px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          padding: 24px;
+          background: rgba(28, 28, 30, 0.4);
+          backdrop-filter: blur(40px);
+          border-radius: 32px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 32px;
           cursor: pointer;
-          transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+          transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+          position: relative;
+          box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4);
           display: flex;
           flex-direction: column;
-          gap: 16px;
-          position: relative;
-          overflow: hidden;
+          gap: 20px;
         }
 
         .voice-card:hover {
-          transform: translateY(-8px);
-          border-color: #3572ef;
-          background: rgba(44, 44, 46, 0.8);
-          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+          transform: translateY(-10px) scale(1.02);
+          border-color: rgba(53, 114, 239, 0.5);
+          background: rgba(35, 35, 38, 0.6);
         }
 
-        .voice-meta { display: flex; justify-content: space-between; align-items: center; }
-        .voice-name { font-size: 18px; font-weight: 700; color: #ffffff; letter-spacing: -0.02em; }
-        .voice-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 10px; border-radius: 100px; background: rgba(53, 114, 239, 0.15); color: #3572ef; }
-        .voice-lang { font-size: 13px; color: #8e8e93; font-weight: 500; }
+        .shimmer-btn {
+          position: relative; overflow: hidden;
+          transition: all 0.4s ease;
+        }
+        .shimmer-btn::after {
+          content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+          background: linear-gradient(45deg, transparent 0%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0) 60%, transparent 100%);
+          transform: rotate(-45deg); animation: shimmer 5s infinite;
+        }
+        @keyframes shimmer { 0% { transform: translateX(-100%) rotate(-45deg); } 20%, 100% { transform: translateX(100%) rotate(-45deg); } }
 
-        .audio-wrapper { background: rgba(255, 255, 255, 0.03); border-radius: 16px; padding: 8px; border: 1px solid rgba(255, 255, 255, 0.05); }
-        audio { height: 32px; width: 100%; filter: invert(100%) hue-rotate(180deg) brightness(1.5); }
+        audio { height: 36px; width: 100%; filter: invert(100%) hue-rotate(180deg) brightness(1.8) contrast(1.2); }
 
-        .select-btn { width: 100%; padding: 12px; border-radius: 14px; background: transparent; border: 1px solid rgba(53, 114, 239, 0.3); color: #3572ef; font-weight: 700; font-size: 13px; transition: all 0.3s; margin-top: 4px; }
-        .voice-card:hover .select-btn { background: #3572ef; color: white; border-color: #3572ef; }
+        @keyframes skeletonShimmer { 
+           0% { background-position: -200% 0; } 
+           100% { background-position: 200% 0; } 
+        }
 
-        .back-button:hover { background: rgba(255, 255, 255, 0.15) !important; border-color: rgba(255, 255, 255, 0.3) !important; transform: translateY(-2px); }
-        .logout-btn:hover { background: rgba(255, 255, 255, 0.2) !important; border-color: rgba(255, 255, 255, 0.4) !important; transform: scale(1.05); }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .ring-spinner { width: 50px; height: 50px; border: 4px solid rgba(53, 114, 239, 0.1); border-top: 4px solid #3572ef; border-radius: 50%; animation: spin 1s linear infinite; }
+        .premium-skeleton {
+          width: 100%; height: 100%;
+          background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.02) 75%);
+          background-size: 200% 100%;
+          animation: skeletonShimmer 2s infinite linear;
+        }
       `}</style>
 
-      {/* Background is provided globally (particles + blobs) */}
+      <div className="background-blobs">
+        <div className="blob blob-1" />
+        <div className="blob blob-2" />
+      </div>
 
-      <div className="content-layer">
-        <div style={headerWrapper}>
-          <div style={headerText}>
-            <h1 style={titleTypography}>{t.title}</h1>
+      <div style={contentWrapper}>
+        <div className="elegant-entry" style={headerLayout}>
+          <div style={headerTextGroup}>
+            <span style={superTag}>Acoustic Profile</span>
+            <h1 className="living-title" style={titleTypography}>{t.title}</h1>
             <p style={subtitleTypography}>{t.subtitle}</p>
           </div>
-          <button className="back-button" onClick={() => navigate("/avatars")} style={slickBackBtn}>
+          <button className="back-btn" onClick={() => navigate("/avatars")} style={refinedBackBtn}>
             {t.back}
           </button>
         </div>
 
         {loading ? (
-          <div style={loaderContainer}>
-            <div className="ring-spinner" />
-            <p style={{ marginTop: 20, color: "#8e8e93", fontWeight: 500 }}>{t.loading}</p>
+          <div style={gridContainer}>
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} style={{ ...skeletonCard, animationDelay: `${i * 0.1}s` }} className="elegant-entry">
+                <div className="premium-skeleton" />
+              </div>
+            ))}
           </div>
         ) : error ? (
-          <div style={errorCard}>{error}</div>
+          <div className="elegant-entry" style={errorBanner}><span>{error}</span></div>
         ) : (
-          <div className="voice-grid">
-            {voices.map((v) => (
-              <div key={v.id} className="voice-card" onClick={() => handleSelect(v)}>
-                <div className="voice-meta">
-                  <span className="voice-name">{v.name}</span>
-                  {v.gender && <span className="voice-tag">{v.gender}</span>}
+          <div style={gridContainer}>
+            {voices.map((v, idx) => (
+              <div
+                key={v.id}
+                className="voice-card elegant-entry"
+                style={{ animationDelay: `${idx * 0.05}s` }}
+                onClick={() => handleSelect(v)}
+              >
+                <div style={voiceHeader}>
+                  <div style={nameGroup}>
+                    <span style={voiceNameTypography}>{v.name}</span>
+                    <span style={langBadge}>🌐 {v.language}</span>
+                  </div>
+                  {v.gender && <span style={genderTag}>{v.gender}</span>}
                 </div>
-                <div className="voice-lang">🌐 {v.language}</div>
-                <div className="audio-wrapper" onClick={(e) => e.stopPropagation()}>
-                  {v.preview_audio ? <audio controls src={v.preview_audio} /> : <div style={{ fontSize: 11, color: "#48484a", textAlign: 'center', padding: '8px' }}>{t.noAudio}</div>}
+
+                <div style={audioContainer} onClick={(e) => e.stopPropagation()}>
+                  {v.preview_audio ? (
+                    <audio controls src={v.preview_audio} />
+                  ) : (
+                    <div style={noAudioBox}>{t.noAudio}</div>
+                  )}
                 </div>
-                <button className="select-btn">{t.select}</button>
+
+                <div className="shimmer-btn" style={selectPill}>{t.select}</div>
               </div>
             ))}
           </div>
@@ -246,7 +210,6 @@ export function VoiceSelectionPage() {
       <div style={settingsContainer}>
         {settingsOpen && (
           <div style={settingsMenu}>
-            <div style={settingsMenuHeader}>{t.settings}</div>
             <div style={settingsRow}>
               <span>{t.languageLabel}</span>
               <div style={toggleGroup}>
@@ -254,15 +217,8 @@ export function VoiceSelectionPage() {
                 <button onClick={() => setLang('en')} style={{ ...langToggleBtn, background: lang === 'en' ? '#3572ef' : 'transparent', color: '#fff' }}>EN</button>
               </div>
             </div>
-            <div style={{ ...settingsRow, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px', marginTop: '4px' }}>
-                <span style={{ color: '#ff453a' }}>{t.logout}</span>
-                <button className="logout-btn" onClick={handleLogout} style={logoutActionBtn}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M16 17L21 12L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
+            <div style={{ ...settingsRow, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px' }}>
+                <span style={{ color: '#ff453a', fontWeight: 700, cursor: 'pointer' }} onClick={handleLogout}>{t.logout}</span>
             </div>
           </div>
         )}
@@ -272,32 +228,38 @@ export function VoiceSelectionPage() {
   );
 }
 
-// --- Style Objects ---
-const pageWrapper: React.CSSProperties = {
-  height: "100dvh",
-  width: "100vw",
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  background: "transparent",
-  position: 'relative',
-  overflowY: 'auto',
-  padding: "60px 40px 0 40px"
-};
+// --- Styles ---
+const pageWrapper: React.CSSProperties = { height: "100dvh", width: "100vw", display: "flex", justifyContent: "center", position: 'relative' };
+const contentWrapper: React.CSSProperties = { maxWidth: "1400px", width: "94%", zIndex: 1, display: 'flex', flexDirection: 'column', padding: '60px 0' };
 
-const headerWrapper: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', maxWidth: '1200px', marginBottom: '40px' };
-const headerText: React.CSSProperties = { textAlign: "left", flex: 1 };
-const titleTypography: React.CSSProperties = { fontSize: "48px", fontWeight: 800, letterSpacing: "-0.05em", margin: 0, color: "#ffffff" };
-const subtitleTypography: React.CSSProperties = { fontSize: "18px", color: "#8e8e93", marginTop: "8px", lineHeight: 1.5, maxWidth: "700px" };
-const slickBackBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.08)", backdropFilter: "blur(12px)", border: "1px solid rgba(255, 255, 255, 0.15)", color: "#ffffff", padding: "12px 24px", borderRadius: "100px", fontSize: "14px", fontWeight: 700, cursor: "pointer", transition: "all 0.3s ease", display: "flex", alignItems: "center", gap: "8px", marginTop: "10px" };
-const loaderContainer: React.CSSProperties = { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "400px" };
-const errorCard: React.CSSProperties = { background: "rgba(255, 69, 58, 0.1)", border: "1px solid #ff453a", padding: "20px 40px", borderRadius: "20px", color: "#ff453a", marginTop: "40px", fontWeight: 600 };
+const headerLayout: React.CSSProperties = { width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "60px" };
+const headerTextGroup: React.CSSProperties = { display: 'flex', flexDirection: 'column' };
+const superTag: React.CSSProperties = { color: '#3572ef', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4em', fontSize: '11px', marginBottom: '16px' };
+const titleTypography: React.CSSProperties = { fontSize: "64px", fontWeight: 800, letterSpacing: "-0.05em", margin: 0, lineHeight: 1 };
+const subtitleTypography: React.CSSProperties = { fontSize: "18px", color: "#6e7681", marginTop: "16px", fontWeight: 500 };
 
+const gridContainer: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "24px", width: "100%", paddingBottom: "100px" };
+
+const voiceHeader: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' };
+const nameGroup: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '4px' };
+const voiceNameTypography: React.CSSProperties = { fontSize: "22px", fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" };
+const langBadge: React.CSSProperties = { fontSize: '12px', color: '#6e7681', fontWeight: 600 };
+const genderTag: React.CSSProperties = { fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 10px', borderRadius: '100px', background: 'rgba(53, 114, 239, 0.1)', color: '#3572ef', border: '1px solid rgba(53, 114, 239, 0.2)' };
+
+const audioContainer: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' };
+const noAudioBox: React.CSSProperties = { textAlign: 'center', fontSize: '12px', color: '#484f58', padding: '8px' };
+
+const selectPill: React.CSSProperties = { background: '#3572ef', color: '#fff', padding: '14px', borderRadius: '100px', textAlign: 'center', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', boxShadow: '0 10px 20px rgba(53, 114, 239, 0.2)' };
+
+const skeletonCard: React.CSSProperties = { height: "240px", borderRadius: "32px", overflow: "hidden", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" };
+const errorBanner: React.CSSProperties = { background: 'rgba(255,69,58,0.1)', border: '1px solid rgba(255,69,58,0.3)', color: '#ff453a', padding: '20px 30px', borderRadius: '20px', fontWeight: 700 };
+
+const refinedBackBtn: React.CSSProperties = { height: "48px", padding: "0 28px", borderRadius: "100px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#fff", fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(10px)' };
+
+// Settings Hub Styles
 const settingsContainer: React.CSSProperties = { position: 'fixed', bottom: '40px', right: '40px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '15px' };
-const settingsFab: React.CSSProperties = { width: '56px', height: '56px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(25, 25, 25, 0.8)', color: '#fff', backdropFilter: 'blur(10px)', cursor: 'pointer', fontSize: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' };
-const settingsMenu: React.CSSProperties = { width: '240px', padding: '20px', borderRadius: '24px', background: 'rgba(28, 28, 30, 0.95)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)', color: '#fff', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' };
-const settingsMenuHeader: React.CSSProperties = { fontSize: '16px', fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' };
-const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', fontWeight: 600 };
-const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '2px' };
-const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 0.2s' };
-const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#ffffff", padding: "8px", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" };
+const settingsFab: React.CSSProperties = { width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(28, 28, 30, 0.8)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: '20px', cursor: 'pointer', backdropFilter: 'blur(20px)' };
+const settingsMenu: React.CSSProperties = { width: '220px', padding: '16px', background: 'rgba(13, 17, 23, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px', backdropFilter: 'blur(30px)', color: '#fff' };
+const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '13px' };
+const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '2px' };
+const langToggleBtn: React.CSSProperties = { border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' };

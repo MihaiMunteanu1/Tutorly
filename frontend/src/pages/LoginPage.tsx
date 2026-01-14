@@ -1,22 +1,22 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login, sendContactEmail } from "../api"; // Asigură-te că calea este corectă
-import { useAuth } from "../auth/AuthContext"; // Asigură-te că calea este corectă
+import { login, sendContactEmail } from "../api";
+import { useAuth } from "../auth/AuthContext";
 
 // --- Translation Dictionary ---
 const TRANSLATIONS = {
   ro: {
     title: "Autentificare",
-    subtitle: "Intră în aplicație și alege-ți avatarul tutorului tău.",
+    subtitle: "Sistemul este pregătit. Introdu datele pentru acces.",
     username: "Nume utilizator",
     password: "Parolă",
-    loginBtn: "Intră în aplicație",
-    loading: "Se autentifică...",
+    loginBtn: "Accesează Contul",
+    loading: "Se verifică datele...",
     error: "Login eșuat. Verifică username/parola.",
     settings: "Setări",
     languageLabel: "Limbă",
-    teamLabel: "Ai nevoie de ajutor? Cunoaște echipa",
-    contactTitle: "Contactează pe",
+    teamLabel: "Suport Tehnic • Echipa",
+    contactTitle: "Mesaj către",
     formFirstName: "Prenume",
     formLastName: "Nume",
     formEmail: "Email-ul tău",
@@ -24,23 +24,23 @@ const TRANSLATIONS = {
     formContent: "Conținut",
     btnSend: "Trimite",
     btnCancel: "Anulează",
-    alertSent: "Mesajul a fost trimis cu succes!",
-    emailInvalid: "Adresa de email nu este validă.",
-    sendError: "A apărut o eroare la trimitere.",
-    sending: "Se trimite..."
+    alertSent: "Mesajul a fost trimis!",
+    emailInvalid: "Adresa de email invalidă.",
+    sendError: "Eroare la trimitere.",
+    sending: "Trimitere..."
   },
   en: {
     title: "Authentication",
-    subtitle: "Log in to the app and choose your AI tutor avatar.",
+    subtitle: "System ready. Enter your credentials to proceed.",
     username: "Username",
     password: "Password",
-    loginBtn: "Enter Application",
-    loading: "Authenticating...",
+    loginBtn: "Access Account",
+    loading: "Verifying credentials...",
     error: "Login failed. Check username/password.",
     settings: "Settings",
     languageLabel: "Language",
-    teamLabel: "Need help? Meet our team",
-    contactTitle: "Contact",
+    teamLabel: "Technical Support • Team",
+    contactTitle: "Message to",
     formFirstName: "First Name",
     formLastName: "Last Name",
     formEmail: "Your Email",
@@ -65,7 +65,6 @@ export function LoginPage() {
   const { setToken } = useAuth();
   const navigate = useNavigate();
 
-  // --- State ---
   const [username, setUsername] = useState("Student");
   const [password, setPassword] = useState("parola123");
   const [showPassword, setShowPassword] = useState(false);
@@ -79,16 +78,9 @@ export function LoginPage() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [contactOpen, setContactOpen] = useState(false);
   const [contactTarget, setContactTarget] = useState<{ name: string; email: string } | null>(null);
-  const [contactData, setContactData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    subject: "",
-    content: ""
-  });
+  const [contactData, setContactData] = useState({ firstName: "", lastName: "", email: "", subject: "", content: "" });
   const [isSendingContact, setIsSendingContact] = useState(false);
 
-  // --- Handlers ---
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -110,21 +102,8 @@ export function LoginPage() {
     setContactOpen(true);
   };
 
-  const validateEmail = (email: string) => {
-    return String(email)
-      .toLowerCase()
-      .match(
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-      );
-  };
-
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateEmail(contactData.email)) {
-      setNotification({ message: t.emailInvalid, type: 'error' });
-      setTimeout(() => setNotification(null), 3000);
-      return;
-    }
     setIsSendingContact(true);
     try {
       await sendContactEmail({ ...contactData, to: contactTarget?.email || "" });
@@ -143,94 +122,99 @@ export function LoginPage() {
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
       <style>{`
-        html, body, #root {
-          margin: 0; padding: 0; width: 100%; height: 100%;
-          overflow: hidden; background-color: #020617;
-        }
+        html, body, #root { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #010409; }
         * { box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
 
-        /* Card Styling */
+        .background-blobs { position: fixed; inset: -10%; width: 120vw; height: 120vh; overflow: hidden; z-index: 0; pointer-events: none; opacity: 0.6; }
+        .blob { position: absolute; filter: blur(140px); border-radius: 50%; mix-blend-mode: screen; }
+        .blob-1 { top: 10%; left: 15%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(53, 114, 239, 0.3) 0%, transparent 70%); animation: drift 25s infinite alternate ease-in-out; }
+        .blob-2 { bottom: 10%; right: 10%; width: 45vw; height: 45vw; background: radial-gradient(circle, rgba(100, 50, 200, 0.2) 0%, transparent 70%); animation: drift 20s infinite alternate-reverse ease-in-out; }
+
+        @keyframes drift {
+          from { transform: translate(0, 0) scale(1) rotate(0deg); }
+          to { transform: translate(100px, -80px) scale(1.1) rotate(15deg); }
+        }
+
         .login-card {
-          background: rgba(28, 28, 30, 0.65);
-          backdrop-filter: blur(20px);
-          border-radius: 40px;
+          background: rgba(28, 28, 30, 0.4);
+          backdrop-filter: blur(40px);
+          border-radius: 48px;
           border: 1px solid rgba(255, 255, 255, 0.08);
-          padding: 50px;
+          padding: 60px;
           width: 100%;
-          max-width: 480px;
-          box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
-          animation: fadeIn 0.8s ease-out;
-          position: relative;
+          max-width: 500px;
+          box-shadow: 0 60px 120px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
+          animation: elegantEntry 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           z-index: 10;
         }
 
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(15px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes elegantEntry {
+          from { opacity: 0; filter: blur(20px); transform: scale(0.98) translateY(20px); }
+          to { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
+        }
+
+        .living-title {
+          background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          text-shadow: 0 0 40px rgba(53, 114, 239, 0.2);
         }
 
         .custom-input {
-          width: 100%; background: rgba(255, 255, 255, 0.04);
+          width: 100%; background: rgba(255, 255, 255, 0.03);
           border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px; padding: 16px 20px;
+          border-radius: 18px; padding: 18px 22px;
           color: white; font-size: 16px; outline: none;
           transition: all 0.3s ease;
         }
         .custom-input:focus { border-color: #3572ef; background: rgba(53, 114, 239, 0.05); }
 
-        .password-toggle {
-          position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-          background: transparent; border: none; color: rgba(255, 255, 255, 0.3);
-          cursor: pointer; display: flex;
+        .shimmer-btn {
+          position: relative; overflow: hidden;
+          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .shimmer-btn::after {
+          content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+          background: linear-gradient(45deg, transparent 0%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0) 60%, transparent 100%);
+          transform: rotate(-45deg); animation: shimmer 5s infinite;
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%) rotate(-45deg); }
+          20%, 100% { transform: translateX(100%) rotate(-45deg); }
         }
 
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .ring-spinner { width: 20px; height: 20px; border: 2px solid rgba(255, 255, 255, 0.3); border-top: 2px solid #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        /* NEW: Support Team Hover Animation */
+        summary {
+          transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+          outline: none;
+        }
+        summary:hover {
+          color: #ffffff !important;
+          transform: translateY(-1px);
+          text-shadow: 0 0 15px rgba(53, 114, 239, 0.6);
+          letter-spacing: 0.02em;
+        }
 
-        /* Team Details */
-        details.team-details { margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; color: #8e8e93; }
-        details.team-details summary { cursor: pointer; font-size: 14px; font-weight: 600; list-style: none; text-align: center; transition: color 0.2s; }
-        details.team-details summary:hover { color: #fff; }
-        details.team-details summary::-webkit-details-marker { display: none; }
-        .team-list { margin-top: 15px; display: flex; flex-direction: column; gap: 12px; animation: fadeIn 0.3s ease-out; }
-        .team-member { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 12px; }
-        .avatar-circle { width: 32px; height: 32px; background: linear-gradient(135deg, #3572ef, #6432c8); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
-        .member-info { flex: 1; font-size: 13px; color: #fff; }
-        .member-email-btn { background: none; border: none; cursor: pointer; font-size: 16px; transition: transform 0.2s; padding: 0; filter: grayscale(100%); opacity: 0.7; }
-        .member-email-btn:hover { transform: scale(1.2); filter: grayscale(0%); opacity: 1; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .modal-card { background: rgba(20, 20, 22, 0.85); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 32px; padding: 40px; width: 90%; max-width: 520px; box-shadow: 0 40px 100px rgba(0,0,0,0.6); }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 2000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease-out; }
-        .modal-card { background: rgba(28, 28, 30, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 30px; width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-
-        .notification-toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); background: rgba(30, 30, 35, 0.95); border: 1px solid rgba(255,255,255,0.1); padding: 12px 24px; border-radius: 50px; color: #fff; z-index: 3000; box-shadow: 0 10px 40px rgba(0,0,0,0.6); font-weight: 600; display: flex; align-items: center; gap: 10px; animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .notification-toast.success { border-color: #30d158; color: #30d158; }
-        .notification-toast.error { border-color: #ff453a; color: #ff453a; }
-        @keyframes slideDown { from { transform: translate(-50%, -100px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        .notification-toast { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); background: rgba(28, 28, 30, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); padding: 14px 28px; border-radius: 100px; color: #fff; z-index: 3000; font-weight: 700; display: flex; align-items: center; gap: 12px; }
       `}</style>
 
-      {/* Background is now provided globally (particles + blobs) */}
+      <div className="background-blobs">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+      </div>
 
-      {notification && (
-        <div className={`notification-toast ${notification.type}`}>
-          {notification.type === 'success' ? '✓' : '✕'} {notification.message}
-        </div>
-      )}
-
-      {/* 3. MAIN LOGIN CARD */}
       <div className="login-card">
-        <h1 style={titleTypography}>{t.title}</h1>
+        <h1 className="living-title" style={titleTypography}>{t.title}</h1>
         <p style={subtitleTypography}>{t.subtitle}</p>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           <div>
             <label style={labelStyle}>{t.username}</label>
-            <div style={{ position: 'relative', marginTop: '8px' }}>
-              <input
-                className="custom-input"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
-              />
+            <div style={{ marginTop: '8px' }}>
+              <input className="custom-input" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
             </div>
           </div>
 
@@ -243,47 +227,29 @@ export function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
-                style={{ paddingRight: '50px' }}
+                style={{ paddingRight: '60px' }}
               />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22" /></svg>
-                ) : (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                )}
+              <button type="button" onClick={() => setShowPassword(!showPassword)} style={passwordToggleStyle}>
+                {showPassword ? "Hide" : "Show"}
               </button>
             </div>
           </div>
 
           {error && <p style={errorText}>{error}</p>}
 
-          <button style={loginButtonStyle} type="submit" disabled={loading}>
-            {loading ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
-                <div className="ring-spinner"></div>
-                {t.loading}
-              </div>
-            ) : t.loginBtn}
+          <button className="shimmer-btn" style={loginButtonStyle} type="submit" disabled={loading}>
+            {loading ? t.loading : t.loginBtn}
           </button>
         </form>
 
-        <details className="team-details">
-          <summary>{t.teamLabel}</summary>
-          <div className="team-list">
+        <details className="team-details" style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px' }}>
+          <summary style={summaryStyle}>{t.teamLabel}</summary>
+          <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {TEAM_MEMBERS.map((member, idx) => (
-              <div key={idx} className="team-member">
-                <div className="avatar-circle">{member.initials}</div>
-                <div className="member-info"><strong>{member.name}</strong></div>
-                <button
-                  onClick={() => handleContactClick(member)}
-                  className="member-email-btn"
-                  title="Send email"
-                >✉️</button>
+              <div key={idx} style={memberRowStyle}>
+                <div style={initialsCircle}>{member.initials}</div>
+                <div style={{ flex: 1, fontSize: '14px', color: '#fff', fontWeight: 600 }}>{member.name}</div>
+                <button onClick={() => handleContactClick(member)} style={contactBtnStyle}>✉️</button>
               </div>
             ))}
           </div>
@@ -293,7 +259,6 @@ export function LoginPage() {
       <div style={settingsContainer}>
         {settingsOpen && (
           <div style={settingsMenu}>
-            <div style={settingsMenuHeader}>{t.settings}</div>
             <div style={settingsRow}>
               <span>{t.languageLabel}</span>
               <div style={toggleGroup}>
@@ -303,40 +268,27 @@ export function LoginPage() {
             </div>
           </div>
         )}
-        <button onClick={() => setSettingsOpen(!settingsOpen)} style={settingsFab}>
-          {settingsOpen ? '✕' : '⚙'}
-        </button>
+        <button onClick={() => setSettingsOpen(!settingsOpen)} style={settingsFab}>{settingsOpen ? '✕' : '⚙'}</button>
       </div>
 
       {contactOpen && (
         <div className="modal-overlay">
           <div className="modal-card">
-            <h2 style={{ ...titleTypography, fontSize: '24px', marginBottom: '20px' }}>
+            <h2 className="living-title" style={{ fontSize: '24px', fontWeight: 800, marginBottom: '24px' }}>
               {t.contactTitle} {contactTarget?.name}
             </h2>
             <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', gap: '12px' }}>
-                <input className="custom-input" placeholder={t.formLastName} required
-                  value={contactData.lastName} onChange={e => setContactData({ ...contactData, lastName: e.target.value })} />
-                <input className="custom-input" placeholder={t.formFirstName} required
-                  value={contactData.firstName} onChange={e => setContactData({ ...contactData, firstName: e.target.value })} />
+                <input className="custom-input" placeholder={t.formLastName} required value={contactData.lastName} onChange={e => setContactData({ ...contactData, lastName: e.target.value })} />
+                <input className="custom-input" placeholder={t.formFirstName} required value={contactData.firstName} onChange={e => setContactData({ ...contactData, firstName: e.target.value })} />
               </div>
-              <input className="custom-input" type="email" placeholder={t.formEmail} required
-                value={contactData.email} onChange={e => setContactData({ ...contactData, email: e.target.value })} />
-              <input className="custom-input" placeholder={t.formSubject} required
-                value={contactData.subject} onChange={e => setContactData({ ...contactData, subject: e.target.value })} />
-              <textarea className="custom-input" placeholder={t.formContent} rows={4} required
-                value={contactData.content} onChange={e => setContactData({ ...contactData, content: e.target.value })}
-                style={{ resize: 'vertical', minHeight: '80px' }} />
+              <input className="custom-input" type="email" placeholder={t.formEmail} required value={contactData.email} onChange={e => setContactData({ ...contactData, email: e.target.value })} />
+              <input className="custom-input" placeholder={t.formSubject} required value={contactData.subject} onChange={e => setContactData({ ...contactData, subject: e.target.value })} />
+              <textarea className="custom-input" placeholder={t.formContent} rows={4} required value={contactData.content} onChange={e => setContactData({ ...contactData, content: e.target.value })} style={{ resize: 'none' }} />
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                <button type="button" onClick={() => setContactOpen(false)}
-                  style={{ ...loginButtonStyle, flex: 1, background: 'rgba(255,255,255,0.1)', boxShadow: 'none' }}>
-                  {t.btnCancel}
-                </button>
-                <button type="submit" style={{ ...loginButtonStyle, flex: 1 }} disabled={isSendingContact}>
-                  {isSendingContact ? t.sending : t.btnSend}
-                </button>
+                <button type="button" onClick={() => setContactOpen(false)} style={{ ...loginButtonStyle, background: 'rgba(255,255,255,0.05)', color: '#fff', boxShadow: 'none' }}>{t.btnCancel}</button>
+                <button type="submit" className="shimmer-btn" style={loginButtonStyle} disabled={isSendingContact}>{isSendingContact ? t.sending : t.btnSend}</button>
               </div>
             </form>
           </div>
@@ -346,31 +298,22 @@ export function LoginPage() {
   );
 }
 
-// --- Styles ---
-const pageWrapper: React.CSSProperties = {
-  height: "100dvh",
-  width: "100vw",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "transparent",
-  position: 'relative',
-  overflow: 'hidden',
-  margin: 0,
-  padding: 0
-};
+// --- Specific Inline Styles ---
+const pageWrapper: React.CSSProperties = { height: "100dvh", width: "100vw", display: "flex", alignItems: "center", justifyContent: "center", position: 'relative', overflow: 'hidden' };
+const titleTypography: React.CSSProperties = { fontSize: "42px", fontWeight: 800, letterSpacing: "-0.05em", margin: "0 0 12px 0", textAlign: 'center' };
+const subtitleTypography: React.CSSProperties = { fontSize: "16px", color: "#6e7681", marginBottom: "40px", textAlign: 'center', fontWeight: 500 };
+const labelStyle: React.CSSProperties = { fontSize: "12px", fontWeight: 800, color: "#3572ef", textTransform: 'uppercase', letterSpacing: '0.15em', marginLeft: '4px' };
+const errorText: React.CSSProperties = { color: "#ff453a", fontSize: "14px", textAlign: "center", fontWeight: 600 };
+const loginButtonStyle: React.CSSProperties = { padding: "0 30px", height: '64px', borderRadius: '100px', background: "#3572ef", color: "#fff", border: "none", fontWeight: 800, fontSize: "17px", cursor: "pointer", boxShadow: "0 20px 40px rgba(0,0,0,0.3)", width: '100%' };
+const passwordToggleStyle: React.CSSProperties = { position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#3572ef', fontWeight: 700, fontSize: '13px', cursor: 'pointer' };
+const summaryStyle: React.CSSProperties = { cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#6e7681', textAlign: 'center', listStyle: 'none' };
+const memberRowStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px 16px', borderRadius: '16px' };
+const initialsCircle: React.CSSProperties = { width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #3572ef, #6432c8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, color: '#fff' };
+const contactBtnStyle: React.CSSProperties = { background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6 };
 
-const titleTypography: React.CSSProperties = { fontSize: "40px", fontWeight: 800, letterSpacing: "-0.05em", margin: "0 0 12px 0", color: "#ffffff", textAlign: 'center' };
-const subtitleTypography: React.CSSProperties = { fontSize: "16px", color: "#8e8e93", marginBottom: "40px", textAlign: 'center', lineHeight: "1.5" };
-const labelStyle: React.CSSProperties = { fontSize: "14px", fontWeight: 600, color: "#a1a1a6", marginLeft: "4px" };
-const errorText: React.CSSProperties = { color: "#ff453a", fontSize: "14px", textAlign: "center", margin: "0" };
-const loginButtonStyle: React.CSSProperties = { padding: "18px", borderRadius: "100px", background: "#3572ef", color: "#fff", border: "none", fontWeight: 700, fontSize: "17px", cursor: "pointer", boxShadow: "0 10px 30px rgba(53, 114, 239, 0.3)", marginTop: "10px" };
 const settingsContainer: React.CSSProperties = { position: 'fixed', bottom: '40px', right: '40px', zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "15px" };
-const settingsFab: React.CSSProperties = { width: '56px', height: '56px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(25, 25, 25, 0.8)', color: '#fff', backdropFilter: 'blur(10px)', cursor: 'pointer', fontSize: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' };
-const settingsMenu: React.CSSProperties = { width: '240px', padding: '20px', borderRadius: '24px', background: 'rgba(28, 28, 30, 0.95)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)', color: '#fff', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' };
-const settingsMenuHeader: React.CSSProperties = { fontSize: '16px', fontWeight: 800, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' };
-const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', fontWeight: 600 };
-const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '2px' };
-const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 };
-
-// Note: no default export; use named export `LoginPage`
+const settingsFab: React.CSSProperties = { width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(28, 28, 30, 0.8)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: '20px', cursor: 'pointer', backdropFilter: 'blur(20px)' };
+const settingsMenu: React.CSSProperties = { width: '220px', padding: '16px', borderRadius: '24px', background: 'rgba(13, 17, 23, 0.95)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(30px)', color: '#fff' };
+const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '13px', fontWeight: 600 };
+const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '2px' };
+const langToggleBtn: React.CSSProperties = { border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 };

@@ -10,601 +10,360 @@ import {
 } from "../api";
 import { Room, RoomEvent, Track, createLocalAudioTrack } from "livekit-client";
 
-type LiveSessionState = {
-  sessionId?: string;
-  sessionToken?: string;
-  livekitUrl?: string;
-  livekitClientToken?: string;
+// --- Translation Dictionary ---
+const TRANSLATIONS = {
+  ro: {
+    title: "Sesiune Live",
+    subtitle: "Conversație în timp real cu tutorul tău digital.",
+    back: "Înapoi",
+    start: "Începe Sesiunea",
+    stop: "Încheie",
+    micOn: "Microfon Pornit",
+    micOff: "Microfon Oprit",
+    initializing: "Se pregătește studioul...",
+    connecting: "Se stabilește conexiunea...",
+    error: "Eroare",
+    settings: "Setări",
+    languageLabel: "Limbă",
+    logout: "Deconectare",
+    readyToStart: "Sistemul este pregătit pentru dialog."
+  },
+  en: {
+    title: "Live Session",
+    subtitle: "Real-time conversation with your digital tutor.",
+    back: "Back",
+    start: "Start Session",
+    stop: "Stop",
+    micOn: "Mic On",
+    micOff: "Mic Off",
+    initializing: "Preparing studio...",
+    connecting: "Establishing connection...",
+    error: "Error",
+    settings: "Settings",
+    languageLabel: "Language",
+    logout: "Logout",
+    readyToStart: "The system is ready for dialog."
+  }
 };
 
 function getErrorMessage(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
-
   try {
-    // Parse "Livechat start failed: 403 {...}"
     const openBrace = msg.indexOf('{');
     if (openBrace !== -1) {
-      const prefix = msg.substring(0, openBrace).trim();
       const jsonPart = msg.substring(openBrace);
       const parsed = JSON.parse(jsonPart);
-
-      if (parsed.detail) {
-        let detail = parsed.detail;
-        // detail might be a nested JSON string
-        if (typeof detail === 'string' && detail.trim().startsWith('{')) {
-          try {
-            const inner = JSON.parse(detail);
-            if (inner.message) detail = inner.message;
-          } catch {
-            // ignore parse errors
-          }
-        }
-        return `${prefix} -> ${detail}`;
-      }
+      if (parsed.detail) return parsed.detail;
     }
-  } catch {
-    // ignore parse errors
-  }
-
+  } catch {}
   return msg;
 }
 
-type LivekitState = {
-  room?: Room;
-  connected?: boolean;
-};
-
 export function LiveChatPage() {
   const navigate = useNavigate();
-
-  // Selecțiile pentru Live vin din AuthContext (setate la alegerea presetului din /subjects)
-  const { token, avatar, voice, selectionSource, liveAvatarId, liveAvatarVoiceId } = useAuth() as any;
+  const { token, setToken, avatar, selectionSource, liveAvatarId, liveAvatarVoiceId } = useAuth() as any;
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("idle");
+  const [lang, setLang] = useState<'ro' | 'en'>('ro');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const t = TRANSLATIONS[lang];
 
-  const [session, setSession] = useState<LiveSessionState>({});
-  const [lk, setLk] = useState<LivekitState>({});
-
+  const [session, setSession] = useState<any>({});
+  const [lk, setLk] = useState<any>({});
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const micTrackRef = useRef<any>(null);
   const attachedAudioElsRef = useRef<HTMLAudioElement[]>([]);
-
   const [voiceActive, setVoiceActive] = useState(false);
-  const [voiceMuted, setVoiceMuted] = useState(true);
-
-  const hasAuth = useMemo(() => Boolean(token), [token]);
 
   useEffect(() => {
-    if (!hasAuth) {
-      navigate("/login");
-      return;
-    }
-
-    // Allow Live only when coming from the 4 preset avatars.
+    if (!token) { navigate("/login"); return; }
     if (selectionSource !== "preset" || !liveAvatarId || !liveAvatarVoiceId) {
       navigate("/mode-selection", { replace: true });
     }
-  }, [hasAuth, selectionSource, liveAvatarId, liveAvatarVoiceId, navigate]);
+  }, [token, selectionSource, liveAvatarId, liveAvatarVoiceId, navigate]);
 
+  // --- Logic Functions ---
   function cleanupAttachedAudio() {
-    for (const el of attachedAudioElsRef.current) {
-      try {
-        el.remove();
-      } catch {
-        // ignore
-      }
-    }
+    for (const el of attachedAudioElsRef.current) { try { el.remove(); } catch {} }
     attachedAudioElsRef.current = [];
   }
-
   async function disconnectLiveKit() {
-    try {
-      await lk.room?.disconnect();
-    } catch {
-      // ignore
-    }
-    setLk({});
-    cleanupAttachedAudio();
-
-    // curăță video element
-    if (videoRef.current) {
-      try {
-        videoRef.current.srcObject = null;
-      } catch {
-        // ignore
-      }
-    }
+    try { await lk.room?.disconnect(); } catch {}
+    setLk({}); cleanupAttachedAudio();
+    if (videoRef.current) videoRef.current.srcObject = null;
   }
 
   async function connectLiveKitRoom(liveKitUrl: string, roomToken: string) {
-    // cleanup previous
     await disconnectLiveKit();
-
-    const room = new Room({
-      adaptiveStream: true,
-      dynacast: true,
-    });
-
-    room.on(RoomEvent.ConnectionStateChanged, (state) => {
-      console.log("[LiveChat] LiveKit ConnectionState", state);
-    });
-
-    room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-      console.log("[LiveChat] TrackSubscribed", {
-        kind: track.kind,
-        sid: publication.trackSid,
-        participant: participant.identity,
-      });
-
+    const room = new Room({ adaptiveStream: true, dynacast: true });
+    room.on(RoomEvent.TrackSubscribed, (track) => {
       if (track.kind === Track.Kind.Video) {
         const v = videoRef.current;
         if (!v) return;
-
-        // atașează direct pe <video ref={videoRef}>
         track.attach(v);
-        v.autoplay = true;
-        v.playsInline = true;
-        v.muted = false;
-
-        // încearcă play (poate fi blocat fără user gesture pentru audio)
+        v.autoplay = true; v.playsInline = true; v.muted = false;
         void v.play().catch(() => {});
         setStatus("running");
       }
-
       if (track.kind === Track.Kind.Audio) {
         const audioEl = track.attach() as HTMLAudioElement;
         audioEl.autoplay = true;
-        audioEl.style.display = "none";
         document.body.appendChild(audioEl);
         attachedAudioElsRef.current.push(audioEl);
       }
     });
-
-    room.on(RoomEvent.DataReceived, (payload, participant, _kind, topic) => {
-      try {
-        const txt = new TextDecoder().decode(payload);
-        console.log("[LiveChat] DataReceived", { topic, from: participant?.identity, txt });
-      } catch {
-        console.log("[LiveChat] DataReceived (binary)", { topic, from: participant?.identity });
-      }
-    });
-
     await room.connect(liveKitUrl, roomToken, { autoSubscribe: true });
     setLk({ room, connected: true });
-
-    console.log("[LiveChat] LiveKit connected. remoteParticipants=", room.remoteParticipants.size);
   }
 
   async function handleStart() {
     if (!token) return;
-    if (!liveAvatarId || !liveAvatarVoiceId) {
-      setErr("Missing live avatar configuration. Please pick a preset avatar from Subjects.");
-      return;
-    }
-
-    setBusy(true);
-    setErr(null);
-    setStatus("creating token...");
-
+    setBusy(true); setErr(null); setStatus("initializing");
     try {
-      // 1) token cu avatar/voice alese pentru LiveAvatar
       const tokenResp = await livechatCreateToken(token, {
-        avatar_id: liveAvatarId,
-        voice_id: liveAvatarVoiceId,
-        mode: "FULL",
-        language: "en",
+        avatar_id: liveAvatarId, voice_id: liveAvatarVoiceId, mode: "FULL", language: "en",
       });
-
-      setSession((s) => ({
-        ...s,
-        sessionId: tokenResp.session_id,
-        sessionToken: tokenResp.session_token,
-      }));
-
-      // 2) start session
-      setStatus("starting session...");
       const startResp = await livechatStart(token, tokenResp.session_token);
-
-      setSession((s) => ({
-        ...s,
-        sessionId: startResp.session_id,
-        livekitUrl: startResp.livekit_url,
-        livekitClientToken: startResp.livekit_client_token,
-      }));
-
-      // 3) pornește agentul (plugin LiveAvatar) – fără el, de obicei nu apar track-uri
+      setSession({ sessionId: startResp.session_id, livekitUrl: startResp.livekit_url, livekitClientToken: startResp.livekit_client_token });
       if (startResp.livekit_agent_token) {
         await livechatAgentStart(token, {
-          session_id: startResp.session_id,
-          livekit_url: startResp.livekit_url,
-          livekit_agent_token: startResp.livekit_agent_token,
-          avatar_id: liveAvatarId,
+          session_id: startResp.session_id, livekit_url: startResp.livekit_url,
+          livekit_agent_token: startResp.livekit_agent_token, avatar_id: liveAvatarId,
         });
-      } else {
-        console.log("[LiveChat] Missing livekit_agent_token from /api/livechat/start");
       }
-
-      // 4) conectează LiveKit și atașează track-urile
-      setStatus("connecting livekit...");
+      setStatus("connecting");
       await connectLiveKitRoom(startResp.livekit_url, startResp.livekit_client_token);
-
-      // dacă nu vine video, status rămâne “connecting…” până la TrackSubscribed(video)
-      // dar noi îl setăm „running” când vine video.
-    } catch (e: unknown) {
-      setErr(getErrorMessage(e));
-      setStatus("error");
-    } finally {
-      setBusy(false);
-    }
+    } catch (e) { setErr(getErrorMessage(e)); setStatus("error"); } finally { setBusy(false); }
   }
 
   async function handleStop() {
-    if (!token) return;
-
     setBusy(true);
-    setErr(null);
-    setStatus("stopping...");
-
     try {
-      // oprește microfonul
-      try {
-        const track = micTrackRef.current;
-        if (track && lk.room) {
-          await lk.room.localParticipant.unpublishTrack(track).catch(() => {});
-          track.stop?.();
-        }
-        micTrackRef.current = null;
-      } catch {
-        // ignore
-      }
-      setVoiceActive(false);
-      setVoiceMuted(true);
-
-      // disconnect LiveKit
+      if (micTrackRef.current && lk.room) { await lk.room.localParticipant.unpublishTrack(micTrackRef.current); micTrackRef.current.stop?.(); }
+      micTrackRef.current = null; setVoiceActive(false);
       await disconnectLiveKit();
-
-      // stop server session
-      if (session.sessionId) {
-        await livechatStop(token, session.sessionId);
-      }
-
-      // stop agent best effort
-      if (session.sessionId) {
-        try {
-          await livechatAgentStop(token, session.sessionId);
-        } catch {
-          // ignore
-        }
-      }
-
-      setSession({});
-      setStatus("idle");
-    } catch (e: unknown) {
-      setErr(getErrorMessage(e));
-      setStatus("error");
-    } finally {
-      setBusy(false);
-    }
+      if (session.sessionId) { await livechatStop(token, session.sessionId); try { await livechatAgentStop(token, session.sessionId); } catch {} }
+      setSession({}); setStatus("idle");
+    } catch (e) { setErr(getErrorMessage(e)); } finally { setBusy(false); }
   }
 
-  async function handleVoiceToggle() {
-    setBusy(true);
-    setErr(null);
-
-    try {
-      const room = lk.room;
-      if (!room) throw new Error("LiveKit not connected");
-
-      if (!voiceActive) {
-        const track = await createLocalAudioTrack();
-        micTrackRef.current = track;
-        await room.localParticipant.publishTrack(track);
-
-        setVoiceActive(true);
-        setVoiceMuted(false);
-      } else {
-        const track = micTrackRef.current;
-        if (track) {
-          await room.localParticipant.unpublishTrack(track).catch(() => {});
-          track.stop?.();
-        }
-        micTrackRef.current = null;
-
-        setVoiceActive(false);
-        setVoiceMuted(true);
-      }
-    } catch (e: unknown) {
-      setErr(getErrorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleMuteToggle() {
-    setBusy(true);
-    setErr(null);
-
-    try {
-      if (!voiceActive) throw new Error("Voice chat is not active");
-
-      const track = micTrackRef.current;
-      if (!track) throw new Error("No mic track");
-
-      if (voiceMuted) {
-        track.unmute?.();
-        track.enabled = true;
-        setVoiceMuted(false);
-      } else {
-        track.mute?.();
-        track.enabled = false;
-        setVoiceMuted(true);
-      }
-    } catch (e: unknown) {
-      setErr(getErrorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const startDisabled =
-    busy || status === "running" || status === "creating token..." || status === "starting session..." || status === "connecting livekit...";
-
-  const stopDisabled = busy || status === "idle";
+  const handleLogout = () => { setToken(null); navigate("/login"); };
 
   return (
-    <div style={page}>
-      <div style={topBar}>
-        <div style={{ display: "flex",height:50, alignItems: "center", gap: 16 }}>
-          <button onClick={() => navigate("/mode-selection")} style={btnSecondary}>
-            ← Back
-          </button>
-          <div style={statusBadge}>
-            <div style={{
-              width: 8, height: 8, borderRadius: "50%",
-              backgroundColor: status === "running" ? "#10b981" : (status === "error" ? "#ef4444" : "#f59e0b"),
-              boxShadow: status === "running" ? "0 0 8px #10b981" : "none"
-            }} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {status}
-            </span>
+    <div style={pageWrapper}>
+      <style>{`
+        html, body, #root { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #010409; }
+        * { font-family: 'Inter', -apple-system, sans-serif; box-sizing: border-box; }
+        
+        .background-blobs { position: fixed; inset: -10%; width: 120vw; height: 120vh; overflow: hidden; z-index: 0; pointer-events: none; opacity: 0.6; }
+        .blob { position: absolute; filter: blur(140px); border-radius: 50%; mix-blend-mode: screen; }
+        .blob-1 { top: 10%; left: 15%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(53, 114, 239, 0.3) 0%, transparent 70%); animation: drift 25s infinite alternate ease-in-out; }
+        .blob-2 { bottom: 10%; right: 10%; width: 45vw; height: 45vw; background: radial-gradient(circle, rgba(100, 50, 200, 0.2) 0%, transparent 70%); animation: drift 20s infinite alternate-reverse ease-in-out; }
+
+        @keyframes drift {
+          from { transform: translate(0, 0) scale(1) rotate(0deg); }
+          to { transform: translate(100px, -80px) scale(1.1) rotate(15deg); }
+        }
+
+        .shimmer-btn {
+          position: relative;
+          overflow: hidden;
+          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .shimmer-btn::after {
+          content: "";
+          position: absolute;
+          top: -50%; left: -50%;
+          width: 200%; height: 200%;
+          background: linear-gradient(
+            45deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0) 40%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0) 60%,
+            transparent 100%
+          );
+          transform: rotate(-45deg);
+          animation: shimmer 4s infinite;
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%) rotate(-45deg); }
+          20%, 100% { transform: translateX(100%) rotate(-45deg); }
+        }
+        
+        .living-name {
+          background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .reveal-stage { animation: elegantEntry 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes elegantEntry {
+          from { opacity: 0; filter: blur(10px); transform: scale(0.99) translateY(10px); }
+          to { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
+        }
+
+        .loader-ring { width: 56px; height: 56px; border: 2px solid rgba(255,255,255,0.05); border-top: 2px solid #3572ef; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+
+      <div className="background-blobs">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+      </div>
+
+      <div style={contentWrapper}>
+        <div style={headerLayout}>
+          <div style={{ flex: 1 }}>
+            <h1 style={titleTypography}>{t.title}</h1>
+            <p style={subtitleTypography}>{t.subtitle}</p>
           </div>
+          <button onClick={() => navigate("/mode-selection")} style={refinedBackBtn}>{t.back}</button>
         </div>
 
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <button disabled={startDisabled} onClick={handleStart} style={startDisabled ? btnDisabled : btnPrimary}>
-            Start session
-          </button>
+        {err && <div style={errorBanner}><span>{err}</span></div>}
 
-          <button disabled={stopDisabled} onClick={handleStop} style={stopDisabled ? btnDisabled : btnDanger}>
-            Stop
-          </button>
+        <div style={mainDisplayArea}>
+          {status === "idle" ? (
+            <div className="reveal-stage" style={idleContainer}>
+              <div style={nameGroup}>
+                <span style={tutorTag}>System Online</span>
+                <h2 className="living-name" style={tutorNameDisplay}>{avatar?.name || "Judy"}</h2>
+                <div style={lineDecoration} />
+                <p style={readyText}>{t.readyToStart}</p>
+              </div>
+              <button onClick={handleStart} className="shimmer-btn" style={startPrimaryBtn}>
+                {t.start}
+              </button>
+            </div>
+          ) : (
+            <div className="reveal-stage" style={videoStageWrapper}>
+              <div style={premiumVideoBox}>
+                <video
+                  ref={videoRef}
+                  style={{
+                    width: "100%", height: "100%", objectFit: "cover",
+                    opacity: status === "running" ? 1 : 0, transition: "opacity 1.2s ease"
+                  }}
+                />
+
+                {status !== "running" && (
+                  <div style={loadingLayer}>
+                    <div className="loader-ring" />
+                    <p style={loadingLabelText}>
+                      {status === "initializing" ? t.initializing : t.connecting}
+                    </p>
+                  </div>
+                )}
+
+                {status === "running" && (
+                  <div style={dockIsland}>
+                    <button
+                      onClick={() => {
+                        if (!lk.room) return;
+                        if (!voiceActive) {
+                          createLocalAudioTrack().then(track => {
+                            micTrackRef.current = track;
+                            lk.room!.localParticipant.publishTrack(track);
+                            setVoiceActive(true);
+                          });
+                        } else {
+                          lk.room.localParticipant.unpublishTrack(micTrackRef.current);
+                          micTrackRef.current.stop();
+                          setVoiceActive(false);
+                        }
+                      }}
+                      style={voiceActive ? activePill : glassPill}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{marginRight: 8}}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                      {voiceActive ? t.micOn : t.micOff}
+                    </button>
+
+                    <div style={verticalDivider} />
+                    <button onClick={handleStop} style={stopActionBtn}>{t.stop}</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {err && (
-        <div style={errorBox}>
-          <div style={{ fontSize: 18 }}>⚠️</div>
-          <div><strong>Error:</strong> {err}</div>
-        </div>
-      )}
-
-      <div style={layout}>
-        <div style={leftPane}>
-          <div style={card}>
-            <div style={cardHeader}>
-              <div style={cardTitle}>Avatar Stream</div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button disabled={busy || status !== "running"} onClick={handleVoiceToggle} style={voiceActive ? btnActive : btnSecondarySmall}>
-                  {voiceActive ? "Mic On 🎙️" : "Mic Off 🔇"}
-                </button>
-                <button disabled={busy || !voiceActive} onClick={handleMuteToggle} style={voiceMuted ? btnDangerSmall : btnSecondarySmall}>
-                  {voiceMuted ? "Unmuted" : "Muted"}
-                </button>
+      {/* Settings FAB */}
+      <div style={settingsContainer}>
+        {settingsOpen && (
+          <div style={settingsMenu}>
+            <div style={settingsRow}>
+              <span>{t.languageLabel}</span>
+              <div style={toggleGroup}>
+                <button onClick={() => setLang('ro')} style={{ ...langToggleBtn, background: lang === 'ro' ? '#3572ef' : 'transparent', color: '#fff' }}>RO</button>
+                <button onClick={() => setLang('en')} style={{ ...langToggleBtn, background: lang === 'en' ? '#3572ef' : 'transparent', color: '#fff' }}>EN</button>
               </div>
             </div>
-            <div style={avatarBox}>
-              <video ref={videoRef} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: status === "running" ? 1 : 0, transition: "opacity 0.5s" }} />
-              {status !== "running" && (
-                <div style={placeholderOverlay}>
-                  <div style={{ color: "rgba(255,255,255,0.5)" }}>Waiting for session...</div>
-                </div>
-              )}
-            </div>
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #334155", display: "flex", gap: 24, fontSize: 12, color: "#94a3b8" }}>
-              <div>
-                <span>Session: </span>
-                <span style={{ fontFamily: "monospace", color: "#e2e8f0" }}>{session.sessionId || "—"}</span>
-              </div>
-              <div>
-                <span>LiveKit: </span>
-                <span style={{ fontFamily: "monospace", color: "#e2e8f0" }}>{session.livekitUrl || "—"}</span>
-              </div>
+            <div style={{ ...settingsRow, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px' }}>
+                <span style={{ color: '#ff453a', cursor: 'pointer', fontWeight: 600 }} onClick={handleLogout}>{t.logout}</span>
             </div>
           </div>
-        </div>
+        )}
+        <button onClick={() => setSettingsOpen(!settingsOpen)} style={settingsFab}>{settingsOpen ? '✕' : '⚙'}</button>
       </div>
     </div>
   );
 }
 
-// --- styles (nemodificate) ---
-const page: React.CSSProperties = {
-  minHeight: "100vh",
-  width: "100%",
-  maxWidth: 1280,
-  margin: "0 auto",
-  padding: "28px 22px",
-  background: "radial-gradient(1200px 600px at 20% 0%, rgba(59,130,246,0.18) 0%, rgba(15,23,42,0) 55%), radial-gradient(900px 500px at 90% 10%, rgba(16,185,129,0.10) 0%, rgba(15,23,42,0) 55%), #0b1220",
-  color: "#f8fafc",
-    borderRadius: 10,
-  fontFamily: "'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+// --- Style Objects (Ultra-Minimalist) ---
+const pageWrapper: React.CSSProperties = { height: "100dvh", width: "100vw", display: "flex", justifyContent: "center", position: 'relative', overflow: 'hidden' };
+const contentWrapper: React.CSSProperties = { maxWidth: "1600px", width: "94%", zIndex: 1, display: 'flex', flexDirection: 'column', padding: '40px 0' };
+const headerLayout: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "40px" };
+const titleTypography: React.CSSProperties = { fontSize: "40px", fontWeight: 800, letterSpacing: "-0.05em", margin: 0, color: "#ffffff" };
+const subtitleTypography: React.CSSProperties = { fontSize: "16px", color: "#6e7681", marginTop: "8px", fontWeight: 500 };
+const refinedBackBtn: React.CSSProperties = { height: "44px", padding: "0 24px", borderRadius: "100px", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", color: "#fff", fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(10px)' };
+
+const mainDisplayArea: React.CSSProperties = { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' };
+
+const idleContainer: React.CSSProperties = { textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '60px' };
+const nameGroup: React.CSSProperties = { display: 'flex', flexDirection: 'column', alignItems: 'center' };
+const tutorTag: React.CSSProperties = { color: '#3572ef', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4em', fontSize: '11px', marginBottom: '20px' };
+const tutorNameDisplay: React.CSSProperties = { fontSize: '110px', fontWeight: 800, margin: 0, letterSpacing: '-0.06em', lineHeight: 1 };
+const lineDecoration: React.CSSProperties = { width: '40px', height: '2px', background: '#3572ef', margin: '40px 0', borderRadius: '2px' };
+const readyText: React.CSSProperties = { color: '#6e7681', fontSize: '16px', fontWeight: 500 };
+
+const startPrimaryBtn: React.CSSProperties = {
+  height: '68px', padding: '0 56px', borderRadius: '100px',
+  background: '#3572ef', color: '#fff', border: 'none',
+  fontSize: '18px', fontWeight: 800, cursor: 'pointer',
+  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255,255,255,0.1)'
 };
 
-const topBar: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: 16,
-  marginBottom: 18,
-  padding: "12px 14px",
-  borderRadius: 18,
-  background: "rgba(30, 41, 59, 0.65)",
-  border: "1px solid rgba(51, 65, 85, 0.9)",
-  boxShadow: "0 10px 28px rgba(0,0,0,0.28)",
-  backdropFilter: "blur(10px)",
+const videoStageWrapper: React.CSSProperties = { width: '100%', height: '100%' };
+const premiumVideoBox: React.CSSProperties = {
+  width: '100%', height: '100%', borderRadius: '56px', overflow: 'hidden',
+  background: '#000', border: '1px solid rgba(255,255,255,0.08)', position: 'relative',
+  boxShadow: '0 60px 120px rgba(0,0,0,0.6), inset 0 0 100px rgba(0,0,0,0.5)'
 };
 
-const layout: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: 20,
-  alignItems: "start",
+const loadingLayer: React.CSSProperties = { position: 'absolute', inset: 0, background: '#010409', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' };
+const loadingLabelText: React.CSSProperties = { marginTop: '24px', fontSize: '15px', fontWeight: 600, color: '#6e7681', letterSpacing: '0.05em' };
+
+const dockIsland: React.CSSProperties = {
+  position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)',
+  display: 'flex', alignItems: 'center', gap: '16px', padding: '10px 14px',
+  background: 'rgba(20, 20, 22, 0.7)', backdropFilter: 'blur(40px)',
+  borderRadius: '100px', border: '1px solid rgba(255,255,255,0.1)',
+  boxShadow: '0 30px 60px rgba(0,0,0,0.5)'
 };
 
-const leftPane: React.CSSProperties = { minWidth: 0 };
+const glassPill: React.CSSProperties = { background: 'rgba(255,255,255,0.06)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '100px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center' };
+const activePill: React.CSSProperties = { background: '#3572ef', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '100px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center' };
+const stopActionBtn: React.CSSProperties = { background: 'transparent', color: '#ff453a', border: 'none', padding: '10px 16px', fontWeight: 800, fontSize: '13px', cursor: 'pointer' };
+const verticalDivider: React.CSSProperties = { width: '1px', background: 'rgba(255,255,255,0.1)', height: '24px', margin: '0 4px' };
 
-const card: React.CSSProperties = {
-  background: "linear-gradient(180deg, rgba(30,41,59,0.9) 0%, rgba(2,6,23,0.85) 100%)",
-  border: "1px solid rgba(51, 65, 85, 0.9)",
-  borderRadius: 20,
-  padding: 24,
-  display: "flex",
-  flexDirection: "column",
-  height: "100%",
-  boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
-};
-
-const cardHeader: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 14,
-  paddingBottom: 12,
-  borderBottom: "1px solid rgba(51, 65, 85, 0.65)",
-};
-
-const cardTitle: React.CSSProperties = {
-  fontWeight: 700,
-  fontSize: 16,
-  color: "#e2e8f0",
-  letterSpacing: "0.01em",
-};
-
-const avatarBox: React.CSSProperties = {
-  width: "100%",
-  height: "min(62vh, 640px)",
-  borderRadius: 18,
-  overflow: "hidden",
-  background: "linear-gradient(180deg, rgba(2,6,23,1) 0%, rgba(2,6,23,0.8) 100%)",
-  border: "1px solid rgba(51, 65, 85, 0.9)",
-  position: "relative",
-  boxShadow: "0 10px 26px rgba(0,0,0,0.35)",
-};
-
-const placeholderOverlay: React.CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "radial-gradient(900px 500px at 30% 20%, rgba(59,130,246,0.12) 0%, rgba(2,6,23,0) 60%)",
-  backdropFilter: "blur(2px)",
-};
-
-const btnBase: React.CSSProperties = {
-  border: "1px solid transparent",
-  borderRadius: 12,
-  padding: "10px 18px",
-  cursor: "pointer",
-  fontWeight: 650,
-  fontSize: 14,
-  lineHeight: 1,
-  userSelect: "none",
-  transition:
-    "transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease",
-};
-
-const btnPrimary: React.CSSProperties = {
-  ...btnBase,
-  background: "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
-  color: "#fff",
-  borderColor: "rgba(29,78,216,0.9)",
-  boxShadow: "0 10px 22px rgba(37,99,235,0.25)",
-};
-
-const btnDanger: React.CSSProperties = {
-  ...btnBase,
-  background: "linear-gradient(180deg, #ef4444 0%, #dc2626 100%)",
-  color: "#fff",
-  borderColor: "rgba(185,28,28,0.9)",
-  boxShadow: "0 10px 22px rgba(220,38,38,0.18)",
-};
-
-const btnSecondary: React.CSSProperties = {
-  ...btnBase,
-  background: "rgba(51, 65, 85, 0.65)",
-  color: "#e2e8f0",
-  borderColor: "rgba(71, 85, 105, 0.9)",
-};
-
-const btnDisabled: React.CSSProperties = {
-  ...btnBase,
-  background: "rgba(30,41,59,0.35)",
-  color: "rgba(148,163,184,0.85)",
-  cursor: "not-allowed",
-  border: "1px solid rgba(51,65,85,0.8)",
-  opacity: 0.65,
-  boxShadow: "none",
-};
-
-const btnActive: React.CSSProperties = {
-  ...btnBase,
-  background: "linear-gradient(180deg, #10b981 0%, #059669 100%)",
-  borderColor: "rgba(4,120,87,0.9)",
-  color: "#fff",
-  padding: "8px 12px",
-  fontSize: 12,
-  borderRadius: 10,
-  boxShadow: "0 10px 20px rgba(16,185,129,0.16)",
-};
-
-const btnSecondarySmall: React.CSSProperties = {
-  ...btnSecondary,
-  padding: "8px 12px",
-  fontSize: 12,
-  borderRadius: 10,
-};
-
-const btnDangerSmall: React.CSSProperties = {
-  ...btnDanger,
-  padding: "8px 12px",
-  fontSize: 12,
-  borderRadius: 10,
-};
-
-const errorBox: React.CSSProperties = {
-  marginBottom: 16,
-  background: "rgba(127, 29, 29, 0.22)",
-  border: "1px solid rgba(239, 68, 68, 0.35)",
-  borderRadius: 14,
-  padding: 16,
-  color: "#fecaca",
-  display: "flex",
-  alignItems: "center",
-  gap: 12,
-  boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
-};
-
-const statusBadge: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  background: "rgba(30,41,59,0.65)",
-  padding: "7px 12px",
-  borderRadius: 999,
-  border: "1px solid rgba(51,65,85,0.9)",
-  boxShadow: "0 10px 20px rgba(0,0,0,0.18)",
-};
+const settingsContainer: React.CSSProperties = { position: 'fixed', bottom: '40px', right: '40px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '15px' };
+const settingsFab: React.CSSProperties = { width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(28, 28, 30, 0.8)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: '20px', cursor: 'pointer', backdropFilter: 'blur(20px)' };
+const settingsMenu: React.CSSProperties = { width: '220px', padding: '16px', background: 'rgba(13, 17, 23, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px', backdropFilter: 'blur(30px)', color: '#fff' };
+const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '13px' };
+const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '2px' };
+const langToggleBtn: React.CSSProperties = { border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' };
+const errorBanner: React.CSSProperties = { background: 'rgba(255,69,58,0.1)', border: '1px solid rgba(255, 69, 58, 0.3)', color: '#ff453a', padding: '14px 24px', borderRadius: '16px', marginBottom: '24px', fontWeight: 600, fontSize: '14px' };
