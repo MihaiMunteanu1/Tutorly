@@ -8,10 +8,10 @@ import "./App.css";
 import { SubjectAvatarsPage } from "./pages/SubjectAvatarsPage";
 import { TextChatPage } from "./pages/TextChatPage";
 import { CreateYourselfPage } from "./pages/CreateYourselfPage";
-import ModePickerPage from "./pages/ModePickerPage";
 import { LiveChatPage } from "./pages/LiveChatPage";
 import IntroPage from "./pages/IntroPage";
 import { ParticleBackground } from "./components/ParticleBackground";
+import { ModeSelectionPage } from "./pages/ModeSelectionPage";
 
 export function App() {
   return (
@@ -27,9 +27,13 @@ export function App() {
               <Route path="/subjects" element={<SubjectAvatarsPage />} />
               <Route path="/create-yourself" element={<CreateYourselfPage />} />
               <Route path="/avatars" element={<AvatarSelectionPage />} />
-              <Route path="/text-chat" element={<TextChatPage />} />
               <Route path="/voices" element={<VoiceSelectionPage />} />
-              <Route path="/mode" element={<ModePickerPage />} />
+
+              <Route path="/mode-selection" element={<ModeSelectionPage />} />
+              {/* backward compat */}
+              <Route path="/mode" element={<Navigate to="/mode-selection" replace />} />
+
+              <Route path="/text-chat" element={<TextChatPage />} />
               <Route path="/livechat" element={<LiveChatPage />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="*" element={<Navigate to="/login" replace />} />

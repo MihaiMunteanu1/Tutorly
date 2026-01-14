@@ -16,6 +16,8 @@ type AuthContextShape = {
 type PresetKey = "mate" | "informatica" | "geografie" | "engleza";
 type Preset = {
   key: PresetKey;
+  liveAvatarVoiceId: string,
+  liveAvatarId: string,
   avatarGroupId: string;
   avatarId: string;
   avatarName: string;
@@ -77,11 +79,32 @@ const TRANSLATIONS = {
   }
 };
 
+//INFO
+// Bryan info: Bryan_IT_Sitting_public,
+// group: 1732148627
+//live avatar id: 64b526e4-741c-43b6-a918-4e40f3261c7a
+
+//GEOGRA
+// live avatar: b6c94c07-e4e5-483e-8bec-e838d5910b7d
+// 1732323320
+// Judy_Teacher_Standing_public
+// la voiceid: 4f3b1e99-b580-4f05-9b67-a5f585be0232
+
+//Mate
+//la:513fd1b7-7ef9-466d-9af2-344e51eeb833
+//group:1732832799
+//Ann_Therapist_public
+
+//Engleza
+// la:0930fd59-c8ad-434d-ad53-b391a1768720
+// group:1732323365
+// Dexter_Lawyer_Sitting_public
+
 const PRESETS: Preset[] = [
-  { key: "informatica", avatarGroupId: "d08c85e6cff84d78b6dc41d83a2eccce", avatarId: "Brandon_Office_Sitting_Front_public", avatarName: "Brandon Office Sitting Front", voiceId: "3787b4ab93174952a3ad649209f1029a", voiceName: "Brandon" },
-  { key: "geografie", avatarGroupId: "1727672614", avatarId: "Georgia_sitting_office_front", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia", avatarName: "Georgia Sitting Office Front" },
-  { key: "mate", avatarGroupId: "977b1ab85dba4eefb159a6072677effd", avatarId: "Caroline_Business_Sitting_Side_public", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia", avatarName: "Caroline Business Sitting Side" },
-  { key: "engleza", avatarGroupId: "977b1ab85dba4eefb159a6072677effd", avatarId: "Caroline_Lobby_Standing_Side_public", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia", avatarName: "Caroline Lobby Standing Side" },
+  { key: "informatica", liveAvatarVoiceId:"9c8b542a-bf5c-4f4c-9011-75c79a274387", liveAvatarId:"64b526e4-741c-43b6-a918-4e40f3261c7a", avatarGroupId: "1732148627", avatarId: "Bryan_IT_Sitting_public", avatarName: "Bryan", voiceId: "3787b4ab93174952a3ad649209f1029a", voiceName: "Brandon" },
+  { key: "geografie",liveAvatarVoiceId:"4f3b1e99-b580-4f05-9b67-a5f585be0232",liveAvatarId:"b6c94c07-e4e5-483e-8bec-e838d5910b7d",  avatarGroupId: "1732323320", avatarId: "Judy_Teacher_Standing_public", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia", avatarName: "Judy" },
+  { key: "mate",liveAvatarVoiceId:"de5574fc-009e-4a01-a881-9919ef8f5a0c", liveAvatarId:"513fd1b7-7ef9-466d-9af2-344e51eeb833", avatarGroupId: "1732832799", avatarId: "Ann_Therapist_public", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia", avatarName: "Ann" },
+  { key: "engleza",liveAvatarVoiceId:"b952f553-f7f3-4e52-8625-86b4c415384f",liveAvatarId:"0930fd59-c8ad-434d-ad53-b391a1768720",  avatarGroupId: "1732323365", avatarId: "Dexter_Lawyer_Sitting_public", voiceId: "3787b4ab93174952a3ad649209f1029a", voiceName: "Georgia", avatarName: "Dexter" },
 ];
 
 async function fetchAvatarPreviewFromGroup(params: { token: string; groupId: string; avatarId: string }) {
@@ -97,7 +120,7 @@ async function fetchAvatarPreviewFromGroup(params: { token: string; groupId: str
 
 export function SubjectAvatarsPage() {
   const navigate = useNavigate();
-  const { token, setToken, setAvatar, setVoice } = (useAuth() as unknown) as AuthContextShape;
+  const { token, setToken, setAvatar, setVoice, setSelectionSource, setLiveAvatarId, setLiveAvatarVoiceId } = (useAuth() as any) as AuthContextShape;
   const [previewByKey, setPreviewByKey] = useState<Record<string, { imageUrl: string; name: string }>>({});
   const [loading, setLoading] = useState(false);
   const [lang, setLang] = useState<'ro' | 'en'>('ro');
@@ -106,7 +129,7 @@ export function SubjectAvatarsPage() {
 
   const t = TRANSLATIONS[lang];
 
-  const work = useMemo(() => PRESETS.map(p => ({ key: p.key, groupId: p.avatarGroupId, avatarId: p.avatarId, fallbackName: p.avatarName })), []);
+  const work = useMemo(() => PRESETS.map(p => ({ key: p.key,liveAvatarVoiceId:p.liveAvatarVoiceId, liveAvatardId: p.liveAvatarId, groupId: p.avatarGroupId, avatarId: p.avatarId, fallbackName: p.avatarName })), []);
 
   useEffect(() => {
     if (!token) return;
@@ -157,7 +180,13 @@ export function SubjectAvatarsPage() {
       avatar_type: "avatar",
     });
     setVoice({ id: p.voiceId, name: p.voiceName });
-    navigate("/chat");
+
+    // mark these as the "preset" selections so Live is available
+    setSelectionSource?.("preset");
+    setLiveAvatarId?.(p.liveAvatarId);
+    setLiveAvatarVoiceId?.(p.liveAvatarVoiceId);
+
+    navigate("/mode-selection");
   };
 
   if (!token) { navigate("/login"); return null; }
@@ -241,7 +270,7 @@ export function SubjectAvatarsPage() {
             <h1 style={titleTypography}>{t.headerTitle}</h1>
             <p style={subtitleTypography}>{loading ? t.loading : t.headerSubtitle}</p>
           </div>
-          <button onClick={() => navigate("/mode")} style={refinedBackBtn}>{t.back}</button>
+          <button onClick={() => navigate("/login")} style={refinedBackBtn}>{t.back}</button>
         </div>
 
         <div style={{ position: "relative", width: "100%" }}>
@@ -403,6 +432,4 @@ const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'spa
 const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '2px' };
 const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 0.2s' };
 const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#ffffff", padding: "8px", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" };
-
-export default SubjectAvatarsPage;
 

@@ -285,7 +285,9 @@ export function TextChatPage() {
 
       {/* Background is provided globally (particles + blobs) */}
 
-      <button className="floating-back" onClick={() => navigate("/mode")}>← {t.back}</button>
+      <button className="floating-back" onClick={() => navigate("/mode-selection")}>
+        ←{t.back}
+      </button>
 
       <main className="scroll-area" ref={scrollRef}>
         <div className="content-container">
@@ -301,8 +303,8 @@ export function TextChatPage() {
   rehypePlugins={[rehypeKatex]}  // 2. Renders it using KaTeX
   components={{
     code(props: any) {
-      const {children, className, node, ...rest} = props
-      const match = /language-(\w+)/.exec(className || '')
+      const { children, className, ...rest } = props;
+      const match = /language-(\w+)/.exec(className || '');
       return match ? (
         <SyntaxHighlighter
           {...rest}
@@ -315,7 +317,7 @@ export function TextChatPage() {
         <code {...rest} className={className}>
           {children}
         </code>
-      )
+      );
     }
   }}
 />

@@ -32,7 +32,7 @@ const TRANSLATIONS = {
 };
 
 export function AvatarSelectionPage() {
-  const { token, setAvatar, setToken } = useAuth() as any;
+  const { token, setAvatar, setToken, setSelectionSource, setLiveAvatarId, setLiveAvatarVoiceId } = useAuth() as any;
   const navigate = useNavigate();
   const [avatars, setAvatars] = useState<Avatar[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +61,12 @@ export function AvatarSelectionPage() {
 
   const handleSelect = (av: Avatar) => {
     setAvatar({ ...av, avatar_type: "avatar" });
+
+    // this is a custom selection (not one of the 4 presets)
+    setSelectionSource?.("custom");
+    setLiveAvatarId?.(null);
+    setLiveAvatarVoiceId?.(null);
+
     navigate("/voices");
   };
 
@@ -331,6 +337,3 @@ const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'spa
 const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '2px' };
 const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 0.2s' };
 const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#ffffff", padding: "8px", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" };
-
-export default AvatarSelectionPage;
-

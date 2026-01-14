@@ -883,9 +883,36 @@ def livechat_create_session_token(
 ) -> LiveAvatarTokenResponse:
     api_key = _require_liveavatar_key()
 
-    avatar_id = (req.avatar_id or HEYGEN_LIVEAVATAR_AVATAR_ID).strip()
-    voice_id = (req.voice_id or HEYGEN_LIVEAVATAR_VOICE_ID).strip()
-    context_id = (req.context_id or HEYGEN_LIVEAVATAR_CONTEXT_ID).strip()
+    contextEnlgishId = "4aba6707-ef16-483a-b275-a6a6242ad5e9"
+    contextITId = "d7098d95-d5bc-4c59-83b3-ab47c967b94a"
+    contextGeograId = "150408ba-533f-4187-87ac-ca54d1a41ce3"
+    contextMateId = "2fd7f2bb-39cf-4cba-9a00-e73cb152c020"
+
+    # We ONLY keep a default for context_id from env.
+    # avatar_id / voice_id must come from the frontend (preset selection).
+    avatar_id = (req.avatar_id or "").strip()
+    voice_id = (req.voice_id or "").strip()
+
+    if not avatar_id:
+        raise HTTPException(status_code=400, detail="Missing avatar_id")
+    if not voice_id:
+        raise HTTPException(status_code=400, detail="Missing voice_id")
+
+    context_by_live_avatar_id: Dict[str, str] = {
+        # informatica
+        "64b526e4-741c-43b6-a918-4e40f3261c7a": contextITId,
+        # geografie
+        "b6c94c07-e4e5-483e-8bec-e838d5910b7d": contextGeograId,
+        # mate
+        "513fd1b7-7ef9-466d-9af2-344e51eeb833": contextMateId,
+        # engleza
+        "0930fd59-c8ad-434d-ad53-b391a1768720": contextEnlgishId,
+    }
+
+    context_id = context_by_live_avatar_id.get(avatar_id, contextEnlgishId)
+
+
+    #context_id = (req.context_id or HEYGEN_LIVEAVATAR_CONTEXT_ID).strip()
     language = (req.language or "en").strip() or "en"
     mode = (req.mode or "FULL").strip().upper()
 

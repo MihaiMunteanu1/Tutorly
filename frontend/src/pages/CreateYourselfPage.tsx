@@ -5,19 +5,6 @@ import { useAuth } from "../auth/AuthContext";
 const API_URL = "http://localhost:8000";
 
 // --- Types ---
-type AuthAvatar = {
-  id: string;
-  name?: string;
-  image_url?: string | null;
-  avatar_type?: "avatar" | "talking_photo";
-};
-
-type AuthShape = {
-  token: string | null;
-  setToken: (t: string | null) => void;
-  setAvatar: (a: AuthAvatar) => void;
-};
-
 type GenerateReq = {
   name: string;
   age: string;
@@ -148,7 +135,7 @@ const TRANSLATIONS = {
 
 export function CreateYourselfPage() {
   const navigate = useNavigate();
-  const { token, setToken, setAvatar } = useAuth() as unknown as AuthShape;
+  const { token, setToken, setAvatar, setSelectionSource, setLiveAvatarId, setLiveAvatarVoiceId } = useAuth() as any;
 
   const AGE_OPTIONS = ["Young Adult", "Early Middle Age", "Late Middle Age", "Senior", "Unspecified"];
   const GENDER_OPTIONS = ["Man", "Woman", "Unspecified"];
@@ -324,6 +311,12 @@ export function CreateYourselfPage() {
       });
 
       setAvatar({ id: groupId, name: form.name || "My Avatar", image_url: mainImage, avatar_type: "talking_photo" });
+
+      // this is a custom (generated) selection
+      setSelectionSource?.("custom");
+      setLiveAvatarId?.(null);
+      setLiveAvatarVoiceId?.(null);
+
       navigate("/voices");
     } catch (e) {
       setErr(toErrorMessage(e));
@@ -607,5 +600,3 @@ const settingsRow: React.CSSProperties = { display: "flex", justifyContent: "spa
 const toggleGroup: React.CSSProperties = { display: "flex", background: "rgba(255, 255, 255, 0.05)", borderRadius: "10px", padding: "2px" };
 const langToggleBtn: React.CSSProperties = { border: "none", padding: "6px 12px", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: 700 };
 const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#ffffff", padding: "8px", borderRadius: "12px", cursor: "pointer", display: "flex" };
-
-export default CreateYourselfPage;

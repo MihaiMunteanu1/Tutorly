@@ -60,7 +60,7 @@ export function VoiceSelectionPage() {
 
   function handleSelect(voice: Voice) {
     setVoice(voice);
-    navigate("/chat");
+    navigate("/mode-selection");
   }
 
   const handleLogout = () => {
@@ -301,5 +301,3 @@ const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'spa
 const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '2px' };
 const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, transition: 'all 0.2s' };
 const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#ffffff", padding: "8px", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" };
-
-export default VoiceSelectionPage;

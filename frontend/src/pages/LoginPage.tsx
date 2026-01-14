@@ -96,7 +96,7 @@ export function LoginPage() {
     try {
       const res = await login(username, password);
       setToken(res.access_token);
-      navigate("/mode");
+      navigate("/subjects");
     } catch {
       setError(t.error);
     } finally {
@@ -114,7 +114,7 @@ export function LoginPage() {
     return String(email)
       .toLowerCase()
       .match(
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
       );
   };
 
@@ -131,7 +131,7 @@ export function LoginPage() {
       setContactOpen(false);
       setNotification({ message: t.alertSent, type: 'success' });
       setTimeout(() => setNotification(null), 4000);
-    } catch (error) {
+    } catch {
       setNotification({ message: t.sendError, type: 'error' });
     } finally {
       setIsSendingContact(false);
@@ -373,5 +373,4 @@ const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'spa
 const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '2px' };
 const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 };
 
-export default LoginPage;
-
+// Note: no default export; use named export `LoginPage`

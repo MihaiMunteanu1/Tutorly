@@ -187,7 +187,13 @@ export function ChatPage() {
         }
       }, 4000);
     } catch {
-      setInteractions(prev => prev.map(item => item.id === thinkingId ? { ...item, text: "Failed.", isProcessing: false } : item));
+      setInteractions(prev =>
+        prev.map(item =>
+          item.id === thinkingId
+            ? { ...item, text: "Failed.", isProcessing: false }
+            : item
+        )
+      );
     }
   }
 
@@ -292,7 +298,7 @@ export function ChatPage() {
 
       {/* Background is provided globally (particles + blobs) */}
 
-      <button className="floating-back" onClick={() => navigate("/mode")}>{t.back}</button>
+      <button className="floating-back" onClick={() => navigate("/mode-selection")}>{t.back}</button>
 
       <main className="scroll-area" ref={scrollRef}>
         <div className="content-container">
@@ -382,6 +388,3 @@ const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'spa
 const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '2px' };
 const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 10px', borderRadius: '8px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 };
 const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#fff", padding: "8px", borderRadius: "10px", cursor: 'pointer', display: 'flex', alignItems: 'center' };
-
-export default ChatPage;
-

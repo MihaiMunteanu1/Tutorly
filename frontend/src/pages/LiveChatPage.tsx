@@ -18,7 +18,7 @@ type LiveSessionState = {
 };
 
 function getErrorMessage(e: unknown): string {
-  let msg = e instanceof Error ? e.message : String(e);
+  const msg = e instanceof Error ? e.message : String(e);
 
   try {
     // Parse "Livechat start failed: 403 {...}"
@@ -32,12 +32,19 @@ function getErrorMessage(e: unknown): string {
         let detail = parsed.detail;
         // detail might be a nested JSON string
         if (typeof detail === 'string' && detail.trim().startsWith('{')) {
-           try { const inner = JSON.parse(detail); if (inner.message) detail = inner.message; } catch {}
+          try {
+            const inner = JSON.parse(detail);
+            if (inner.message) detail = inner.message;
+          } catch {
+            // ignore parse errors
+          }
         }
         return `${prefix} -> ${detail}`;
       }
     }
-  } catch {}
+  } catch {
+    // ignore parse errors
+  }
 
   return msg;
 }
@@ -50,8 +57,8 @@ type LivekitState = {
 export function LiveChatPage() {
   const navigate = useNavigate();
 
-  // IMPORTANT: aici trebuie să ai selecțiile tale (avatar/voice/contextId) din AuthContext
-  const { token, avatar, voice, contextId } = useAuth() as any;
+  // Selecțiile pentru Live vin din AuthContext (setate la alegerea presetului din /subjects)
+  const { token, avatar, voice, selectionSource, liveAvatarId, liveAvatarVoiceId } = useAuth() as any;
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -70,10 +77,16 @@ export function LiveChatPage() {
   const hasAuth = useMemo(() => Boolean(token), [token]);
 
   useEffect(() => {
-    if (!hasAuth) navigate("/login");
-  }, [hasAuth, navigate]);
+    if (!hasAuth) {
+      navigate("/login");
+      return;
+    }
 
-
+    // Allow Live only when coming from the 4 preset avatars.
+    if (selectionSource !== "preset" || !liveAvatarId || !liveAvatarVoiceId) {
+      navigate("/mode-selection", { replace: true });
+    }
+  }, [hasAuth, selectionSource, liveAvatarId, liveAvatarVoiceId, navigate]);
 
   function cleanupAttachedAudio() {
     for (const el of attachedAudioElsRef.current) {
@@ -166,17 +179,20 @@ export function LiveChatPage() {
 
   async function handleStart() {
     if (!token) return;
+    if (!liveAvatarId || !liveAvatarVoiceId) {
+      setErr("Missing live avatar configuration. Please pick a preset avatar from Subjects.");
+      return;
+    }
 
     setBusy(true);
     setErr(null);
     setStatus("creating token...");
 
     try {
-      // 1) token cu avatar/voice/context alese
+      // 1) token cu avatar/voice alese pentru LiveAvatar
       const tokenResp = await livechatCreateToken(token, {
-        //avatar_id: avatar?.id,
-        //voice_id: voice?.id,
-        context_id: contextId,
+        avatar_id: liveAvatarId,
+        voice_id: liveAvatarVoiceId,
         mode: "FULL",
         language: "en",
       });
@@ -204,7 +220,7 @@ export function LiveChatPage() {
           session_id: startResp.session_id,
           livekit_url: startResp.livekit_url,
           livekit_agent_token: startResp.livekit_agent_token,
-          avatar_id: avatar?.id,
+          avatar_id: liveAvatarId,
         });
       } else {
         console.log("[LiveChat] Missing livekit_agent_token from /api/livechat/start");
@@ -341,7 +357,7 @@ export function LiveChatPage() {
     <div style={page}>
       <div style={topBar}>
         <div style={{ display: "flex",height:50, alignItems: "center", gap: 16 }}>
-          <button onClick={() => navigate("/mode")} style={btnSecondary}>
+          <button onClick={() => navigate("/mode-selection")} style={btnSecondary}>
             ← Back
           </button>
           <div style={statusBadge}>
