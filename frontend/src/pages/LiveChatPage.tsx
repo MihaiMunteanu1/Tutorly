@@ -416,12 +416,14 @@ export function LiveChatPage() {
 // --- styles (nemodificate) ---
 const page: React.CSSProperties = {
   minHeight: "100vh",
-    width: 1500,
-  padding: 24,
-  background: "#0f172a",
+  width: "100%",
+  maxWidth: 1280,
+  margin: "0 auto",
+  padding: "28px 22px",
+  background: "radial-gradient(1200px 600px at 20% 0%, rgba(59,130,246,0.18) 0%, rgba(15,23,42,0) 55%), radial-gradient(900px 500px at 90% 10%, rgba(16,185,129,0.10) 0%, rgba(15,23,42,0) 55%), #0b1220",
   color: "#f8fafc",
-  fontFamily: "'Inter', sans-serif", 
-    borderRadius: 9
+    borderRadius: 10,
+  fontFamily: "'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
 };
 
 const topBar: React.CSSProperties = {
@@ -430,43 +432,59 @@ const topBar: React.CSSProperties = {
   alignItems: "center",
   gap: 16,
   marginBottom: 18,
+  padding: "12px 14px",
+  borderRadius: 18,
+  background: "rgba(30, 41, 59, 0.65)",
+  border: "1px solid rgba(51, 65, 85, 0.9)",
+  boxShadow: "0 10px 28px rgba(0,0,0,0.28)",
+  backdropFilter: "blur(10px)",
 };
 
 const layout: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: 18,
+  gap: 20,
+  alignItems: "start",
 };
 
 const leftPane: React.CSSProperties = { minWidth: 0 };
 
 const card: React.CSSProperties = {
-  background: "#1e293b",
-  border: "1px solid #334155",
-  borderRadius: 24,
+  background: "linear-gradient(180deg, rgba(30,41,59,0.9) 0%, rgba(2,6,23,0.85) 100%)",
+  border: "1px solid rgba(51, 65, 85, 0.9)",
+  borderRadius: 20,
   padding: 24,
   display: "flex",
   flexDirection: "column",
   height: "100%",
+  boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
 };
 
 const cardHeader: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginBottom: 16,
+  marginBottom: 14,
+  paddingBottom: 12,
+  borderBottom: "1px solid rgba(51, 65, 85, 0.65)",
 };
 
-const cardTitle: React.CSSProperties = { fontWeight: 700, fontSize: 18, color: "#fff" };
+const cardTitle: React.CSSProperties = {
+  fontWeight: 700,
+  fontSize: 16,
+  color: "#e2e8f0",
+  letterSpacing: "0.01em",
+};
 
 const avatarBox: React.CSSProperties = {
   width: "100%",
-  height: 600,
+  height: "min(62vh, 640px)",
   borderRadius: 18,
   overflow: "hidden",
-  background: "#020617",
-  border: "1px solid #334155",
+  background: "linear-gradient(180deg, rgba(2,6,23,1) 0%, rgba(2,6,23,0.8) 100%)",
+  border: "1px solid rgba(51, 65, 85, 0.9)",
   position: "relative",
+  boxShadow: "0 10px 26px rgba(0,0,0,0.35)",
 };
 
 const placeholderOverlay: React.CSSProperties = {
@@ -476,82 +494,101 @@ const placeholderOverlay: React.CSSProperties = {
   flexDirection: "column",
   alignItems: "center",
   justifyContent: "center",
+  background: "radial-gradient(900px 500px at 30% 20%, rgba(59,130,246,0.12) 0%, rgba(2,6,23,0) 60%)",
+  backdropFilter: "blur(2px)",
 };
 
 const btnBase: React.CSSProperties = {
-  border: "none",
+  border: "1px solid transparent",
   borderRadius: 12,
-  padding: "10px 20px",
+  padding: "10px 18px",
   cursor: "pointer",
-  fontWeight: 600,
+  fontWeight: 650,
   fontSize: 14,
-  transition: "all 0.2s",
+  lineHeight: 1,
+  userSelect: "none",
+  transition:
+    "transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease",
 };
 
 const btnPrimary: React.CSSProperties = {
   ...btnBase,
-  background: "#3b82f6",
+  background: "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
   color: "#fff",
+  borderColor: "rgba(29,78,216,0.9)",
+  boxShadow: "0 10px 22px rgba(37,99,235,0.25)",
 };
 
 const btnDanger: React.CSSProperties = {
   ...btnBase,
-  background: "#ef4444",
+  background: "linear-gradient(180deg, #ef4444 0%, #dc2626 100%)",
   color: "#fff",
+  borderColor: "rgba(185,28,28,0.9)",
+  boxShadow: "0 10px 22px rgba(220,38,38,0.18)",
 };
 
 const btnSecondary: React.CSSProperties = {
   ...btnBase,
-  background: "#334155",
+  background: "rgba(51, 65, 85, 0.65)",
   color: "#e2e8f0",
+  borderColor: "rgba(71, 85, 105, 0.9)",
 };
 
 const btnDisabled: React.CSSProperties = {
   ...btnBase,
-  background: "#1e293b",
-  color: "#64748b",
+  background: "rgba(30,41,59,0.35)",
+  color: "rgba(148,163,184,0.85)",
   cursor: "not-allowed",
-  border: "1px solid #334155",
+  border: "1px solid rgba(51,65,85,0.8)",
+  opacity: 0.65,
+  boxShadow: "none",
 };
 
 const btnActive: React.CSSProperties = {
   ...btnBase,
-  background: "#10b981",
+  background: "linear-gradient(180deg, #10b981 0%, #059669 100%)",
+  borderColor: "rgba(4,120,87,0.9)",
   color: "#fff",
-  padding: "8px 14px",
+  padding: "8px 12px",
   fontSize: 12,
+  borderRadius: 10,
+  boxShadow: "0 10px 20px rgba(16,185,129,0.16)",
 };
 
 const btnSecondarySmall: React.CSSProperties = {
   ...btnSecondary,
-  padding: "8px 14px",
+  padding: "8px 12px",
   fontSize: 12,
+  borderRadius: 10,
 };
 
 const btnDangerSmall: React.CSSProperties = {
   ...btnDanger,
-  padding: "8px 14px",
+  padding: "8px 12px",
   fontSize: 12,
+  borderRadius: 10,
 };
 
 const errorBox: React.CSSProperties = {
   marginBottom: 16,
-  background: "#450a0a",
-  border: "1px solid #991b1b",
-  borderRadius: 12,
+  background: "rgba(127, 29, 29, 0.22)",
+  border: "1px solid rgba(239, 68, 68, 0.35)",
+  borderRadius: 14,
   padding: 16,
   color: "#fecaca",
   display: "flex",
   alignItems: "center",
   gap: 12,
+  boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
 };
 
 const statusBadge: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 8,
-  background: "#1e293b",
-  padding: "6px 12px",
-  borderRadius: 20,
-  border: "1px solid #334155",
+  background: "rgba(30,41,59,0.65)",
+  padding: "7px 12px",
+  borderRadius: 999,
+  border: "1px solid rgba(51,65,85,0.9)",
+  boxShadow: "0 10px 20px rgba(0,0,0,0.18)",
 };
