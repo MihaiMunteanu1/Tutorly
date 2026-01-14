@@ -230,8 +230,10 @@ export function LiveChatPage() {
             <div className="reveal-stage" style={idleContainer}>
               <div style={nameGroup}>
                 <span style={tutorTag}>System Online</span>
-                <h2 className="living-name" style={tutorNameDisplay}>{avatar?.name || "Judy"}</h2>
-                <div style={lineDecoration} />
+            <h2 className="living-name" style={tutorNameDisplay}>
+              {(avatar?.name ?? "Judy").trim().split(/\s+/)[0]}
+            </h2>
+                  <div style={lineDecoration} />
                 <p style={readyText}>{t.readyToStart}</p>
               </div>
               <button onClick={handleStart} className="shimmer-btn" style={startPrimaryBtn}>
