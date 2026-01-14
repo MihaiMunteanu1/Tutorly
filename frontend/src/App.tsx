@@ -11,15 +11,16 @@ import { CreateYourselfPage } from "./pages/CreateYourselfPage";
 import ModePickerPage from "./pages/ModePickerPage";
 import { LiveChatPage } from "./pages/LiveChatPage";
 import IntroPage from "./pages/IntroPage";
+import { ParticleBackground } from "./components/ParticleBackground";
 
 export function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <div className="app-shell">
-          {/* Header has been removed from here */}
+          <ParticleBackground />
 
-          <main className="app-main">
+          <main className="app-main" style={{ position: "relative", zIndex: 10 }}>
             <Routes>
               <Route path={"/"} element={<IntroPage />} />
               <Route path="/login" element={<LoginPage />} />

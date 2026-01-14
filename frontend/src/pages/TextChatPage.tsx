@@ -283,12 +283,7 @@ export function TextChatPage() {
         .logout-btn:hover { background: rgba(255, 255, 255, 0.2) !important; transform: scale(1.05); }
       `}</style>
 
-      {/* FIXED BACKGROUND LAYER */}
-      <div className="background-blobs">
-        <div className="blob blob-1"></div>
-        <div className="blob blob-2"></div>
-        <div className="blob blob-3"></div>
-      </div>
+      {/* Background is provided globally (particles + blobs) */}
 
       <button className="floating-back" onClick={() => navigate("/mode")}>← {t.back}</button>
 

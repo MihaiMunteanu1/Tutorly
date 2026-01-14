@@ -233,11 +233,7 @@ export function SubjectAvatarsPage() {
         .orb-create { animation: floatCardAlt 12s infinite ease-in-out alternate; }
       `}</style>
 
-      <div className="background-blobs">
-        <div className="blob blob-1"></div>
-        <div className="blob blob-2"></div>
-        <div className="blob blob-3"></div>
-      </div>
+      {/* Background is provided globally (particles + blobs) */}
 
       <div style={contentWrapper}>
         <div style={headerLayout}>
@@ -326,7 +322,7 @@ export function SubjectAvatarsPage() {
                   {/* Cyan/Teal Orbs Front */}
                   <div className="glass-orb orb-create" style={{ top: '5%', right: '10%', width: '160px', height: '160px', background: '#00d2ff' }} />
                   <div className="glass-orb orb-create" style={{ bottom: '15%', left: '10%', width: '190px', height: '190px', background: '#34c759', animationDelay: '-3s' }} />
-                  <div className="glass-orb orb-create" style={{ middle: '50%', left: '20%', width: '120px', height: '120px', background: '#3572ef', animationDelay: '-6s' }} />
+                  <div className="glass-orb orb-create" style={{ top: '50%', left: '20%', width: '120px', height: '120px', background: '#3572ef', animationDelay: '-6s', transform: 'translateY(-50%)' }} />
 
                   <div style={{ ...refinedDashedCircle, background: 'rgba(255, 255, 255, 0.03)', border: '1px dashed rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(10px)', zIndex: 2 }}>
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -409,3 +405,4 @@ const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px'
 const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#ffffff", padding: "8px", borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" };
 
 export default SubjectAvatarsPage;
+

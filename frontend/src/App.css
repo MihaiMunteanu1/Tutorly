@@ -2,11 +2,83 @@
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   color: #f9fafb;
-  background: radial-gradient(circle at top, #1e293b 0, #020617 55%);
+  /*background: radial-gradient(circle at top, #1e293b 0, #020617 55%);*/
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #020617;
 }
 
 body {
   margin: 0;
+}
+
+/* --- Shared LoginPage-style ambient background blobs --- */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(50px, -70px) scale(1.1);
+  }
+  66% {
+    transform: translate(-30px, 30px) scale(0.95);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.background-blobs {
+  position: fixed;
+  top: -10%;
+  left: -10%;
+  width: 120vw;
+  height: 120vh;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  filter: blur(120px);
+  opacity: 0.25;
+  animation: blob 18s infinite ease-in-out alternate;
+  border-radius: 50%;
+}
+
+.blob-1 {
+  top: 10%;
+  left: 10%;
+  width: 600px;
+  height: 600px;
+  background: rgba(53, 114, 239, 0.4);
+  animation-delay: 0s;
+}
+
+.blob-2 {
+  bottom: 10%;
+  right: 15%;
+  width: 700px;
+  height: 700px;
+  background: rgba(100, 50, 200, 0.3);
+  animation-delay: -5s;
+}
+
+.blob-3 {
+  top: 40%;
+  left: 30%;
+  width: 500px;
+  height: 500px;
+  background: rgba(53, 114, 239, 0.2);
+  animation-delay: -10s;
 }
 
 .app-shell {

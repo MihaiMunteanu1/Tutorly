@@ -204,12 +204,7 @@ export function VoiceSelectionPage() {
         .ring-spinner { width: 50px; height: 50px; border: 4px solid rgba(53, 114, 239, 0.1); border-top: 4px solid #3572ef; border-radius: 50%; animation: spin 1s linear infinite; }
       `}</style>
 
-      {/* FIXED BACKGROUND LAYER */}
-      <div className="background-blobs">
-        <div className="blob blob-1"></div>
-        <div className="blob blob-2"></div>
-        <div className="blob blob-3"></div>
-      </div>
+      {/* Background is provided globally (particles + blobs) */}
 
       <div className="content-layer">
         <div style={headerWrapper}>

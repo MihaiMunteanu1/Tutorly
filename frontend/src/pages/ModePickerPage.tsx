@@ -283,7 +283,7 @@
 //
 // export default ModePickerPage;
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
@@ -322,7 +322,6 @@ const TRANSLATIONS = {
 export function ModePickerPage() {
   const navigate = useNavigate();
   const { setToken } = useAuth();
-  const canvasRef = useRef(null);
 
   const [lang, setLang] = useState('ro');
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -333,154 +332,12 @@ export function ModePickerPage() {
     navigate("/login");
   };
 
-  // --- 3D HEXAGON ANIMATION LOGIC ---
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let animationFrameId;
-
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    const mouse = { x: undefined, y: undefined };
-    const handleMouseMove = (e) => {
-      mouse.x = e.x;
-      mouse.y = e.y;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    const hexRadius = 25;
-    const hexGap = 2;
-    const hexWidth = Math.sqrt(3) * hexRadius;
-    const hexHeight = 2 * hexRadius;
-    const hexagons = [];
-
-    class Hexagon {
-      constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.opacity = 0.02; // Foarte sters by default
-        this.targetOpacity = 0.02;
-        this.scale = 1;      // Scara normală
-        this.targetScale = 1;
-      }
-
-      draw() {
-        ctx.save();
-        ctx.beginPath();
-
-        // Calculăm vârfurile hexagonului ținând cont de scală
-        const currentRadius = hexRadius * this.scale;
-
-        for (let i = 0; i < 6; i++) {
-          const angleDeg = 60 * i - 30;
-          const angleRad = (Math.PI / 180) * angleDeg;
-          const px = this.x + currentRadius * Math.cos(angleRad);
-          const py = this.y + currentRadius * Math.sin(angleRad);
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        }
-        ctx.closePath();
-
-        // --- EFECTUL 3D ---
-        // 1. Shadow (Glow) doar dacă e activ
-        if (this.opacity > 0.1) {
-            ctx.shadowColor = `rgba(53, 114, 239, ${this.opacity})`;
-            ctx.shadowBlur = 15 * this.opacity; // Glow variabil
-        }
-
-        // 2. Gradient Radial (Lumină în centru -> Întuneric margini)
-        // Asta creează efectul de "bombat" sau 3D
-        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, currentRadius);
-        gradient.addColorStop(0, `rgba(100, 160, 255, ${this.opacity * 1.5})`); // Centru luminos
-        gradient.addColorStop(0.8, `rgba(53, 114, 239, ${this.opacity})`);     // Culoare bază
-        gradient.addColorStop(1, `rgba(20, 40, 100, ${this.opacity * 0.5})`);  // Margine întunecată
-
-        ctx.fillStyle = gradient;
-        ctx.fill();
-
-        // 3. Stroke fin
-        ctx.strokeStyle = `rgba(100, 150, 255, ${this.opacity * 0.8})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        ctx.restore();
-      }
-
-      update() {
-        const dx = mouse.x - this.x;
-        const dy = mouse.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        // Logică interacțiune
-        if (distance < 150) {
-          // Cu cât e mai aproape, cu atât e mai opac și mai mare
-          const intensity = 1 - (distance / 150);
-          this.targetOpacity = 0.8 * intensity;
-          this.targetScale = 1 + (0.15 * intensity); // Crește cu max 15%
-        } else {
-          this.targetOpacity = 0.02;
-          this.targetScale = 1;
-        }
-
-        // Smooth transition (Lerp)
-        this.opacity += (this.targetOpacity - this.opacity) * 0.1;
-        this.scale += (this.targetScale - this.scale) * 0.1;
-
-        this.draw();
-      }
-    }
-
-    function initGrid() {
-        hexagons.length = 0;
-        let row = 0;
-        for (let y = 0; y < canvas.height + hexRadius; y += hexHeight * 0.75) {
-            let col = 0;
-            const offset = row % 2 === 0 ? 0 : hexWidth / 2;
-            for (let x = -hexWidth; x < canvas.width + hexWidth; x += hexWidth) {
-                hexagons.push(new Hexagon(x + offset + col * hexGap, y + row * hexGap));
-                col++;
-            }
-            row++;
-        }
-    }
-
-    window.addEventListener('resize', initGrid);
-    initGrid();
-
-    function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      hexagons.forEach(hex => hex.update());
-      animationFrameId = requestAnimationFrame(animate);
-    }
-    animate();
-
-    return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('resize', resizeCanvas);
-        window.removeEventListener('resize', initGrid);
-        cancelAnimationFrame(animationFrameId);
-    };
-  }, []);
-
   return (
     <div style={pageWrapper}>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
       <style>{`
-        /* Reset & Base */
-        html, body, #root {
-          margin: 0; padding: 0; width: 100%; height: 100%;
-          overflow: hidden; background-color: #020617;
-          font-family: 'Inter', sans-serif;
-        }
-
-        /* CARDURILE - CSS REPARAT (Stil original) */
+        /* Keep only page-specific styles; background is provided globally */
         .mode-card {
           flex: 1;
           min-width: 280px;
@@ -489,9 +346,9 @@ export function ModePickerPage() {
           border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 24px;
           display: flex;
-          flex-direction: column; /* Esențial pentru layout vertical */
-          align-items: center;    /* Centrează orizontal */
-          justify-content: center; /* Centrează vertical */
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
           padding: 40px 30px;
           cursor: pointer;
           transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -525,7 +382,6 @@ export function ModePickerPage() {
           transform: scale(1.1) rotate(5deg);
         }
 
-        /* Responsive Grid */
         .cards-grid {
           display: flex;
           gap: 30px;
@@ -537,43 +393,34 @@ export function ModePickerPage() {
         }
       `}</style>
 
-      {/* Canvas Layer */}
-      <canvas
-        ref={canvasRef}
-        style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}
-      />
-
       {/* Content */}
       <div style={contentWrapper}>
         <div style={headerLayout}>
-            <h1 style={titleTypography}>{t.title}</h1>
-            <p style={subtitleTypography}>{t.subtitle}</p>
+          <h1 style={titleTypography}>{t.title}</h1>
+          <p style={subtitleTypography}>{t.subtitle}</p>
         </div>
 
         <div className="cards-grid">
-            {/* 1. Text Chat */}
-            <div className="mode-card" onClick={() => navigate("/text-chat")}>
-                <div className="mode-icon" style={{ color: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)' }}>💬</div>
-                <h2 style={cardTitle}>{t.chatTitle}</h2>
-                <p style={cardDesc}>{t.chatDesc}</p>
-                <div style={selectBadge}>{t.select}</div>
-            </div>
+          <div className="mode-card" onClick={() => navigate("/text-chat")}>
+            <div className="mode-icon" style={{ color: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)' }}>💬</div>
+            <h2 style={cardTitle}>{t.chatTitle}</h2>
+            <p style={cardDesc}>{t.chatDesc}</p>
+            <div style={selectBadge}>{t.select}</div>
+          </div>
 
-            {/* 2. Video Mode */}
-            <div className="mode-card" onClick={() => navigate("/subjects")}>
-                <div className="mode-icon" style={{ color: '#a855f7', background: 'rgba(168, 85, 247, 0.1)' }}>🎬</div>
-                <h2 style={cardTitle}>{t.videoTitle}</h2>
-                <p style={cardDesc}>{t.videoDesc}</p>
-                <div style={{ ...selectBadge, color: '#a855f7', background: 'rgba(168, 85, 247, 0.15)' }}>{t.select}</div>
-            </div>
+          <div className="mode-card" onClick={() => navigate("/subjects")}>
+            <div className="mode-icon" style={{ color: '#a855f7', background: 'rgba(168, 85, 247, 0.1)' }}>🎬</div>
+            <h2 style={cardTitle}>{t.videoTitle}</h2>
+            <p style={cardDesc}>{t.videoDesc}</p>
+            <div style={{ ...selectBadge, color: '#a855f7', background: 'rgba(168, 85, 247, 0.15)' }}>{t.select}</div>
+          </div>
 
-            {/* 3. Live Avatar */}
-            <div className="mode-card" onClick={() => navigate("/livechat")}>
-                <div className="mode-icon" style={{ color: '#06b6d4', background: 'rgba(6, 182, 212, 0.1)' }}>🤖</div>
-                <h2 style={cardTitle}>{t.liveTitle}</h2>
-                <p style={cardDesc}>{t.liveDesc}</p>
-                <div style={{ ...selectBadge, color: '#06b6d4', background: 'rgba(6, 182, 212, 0.15)' }}>{t.select}</div>
-            </div>
+          <div className="mode-card" onClick={() => navigate("/livechat")}>
+            <div className="mode-icon" style={{ color: '#06b6d4', background: 'rgba(6, 182, 212, 0.1)' }}>🤖</div>
+            <h2 style={cardTitle}>{t.liveTitle}</h2>
+            <p style={cardDesc}>{t.liveDesc}</p>
+            <div style={{ ...selectBadge, color: '#06b6d4', background: 'rgba(6, 182, 212, 0.15)' }}>{t.select}</div>
+          </div>
         </div>
       </div>
 
@@ -590,10 +437,10 @@ export function ModePickerPage() {
               </div>
             </div>
             <div style={{ ...settingsRow, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px', marginTop: '4px' }}>
-                <span style={{ color: '#ff453a' }}>{t.logout}</span>
-                <button onClick={handleLogout} style={logoutActionBtn}>
-                  <span style={{ fontSize: '18px' }}>⎋</span>
-                </button>
+              <span style={{ color: '#ff453a' }}>{t.logout}</span>
+              <button onClick={handleLogout} style={logoutActionBtn}>
+                <span style={{ fontSize: '18px' }}>⎋</span>
+              </button>
             </div>
           </div>
         )}
