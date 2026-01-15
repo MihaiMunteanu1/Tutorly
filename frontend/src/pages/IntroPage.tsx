@@ -7,7 +7,7 @@ const TRANSLATIONS = {
     title: "Tutorly",
     subtitle: "Asistentul tău inteligent, redefinit pentru viitor.",
     loginBtn: "Începe Conversația",
-    footer: "© 2026 AI Interface • Design Minimalist",
+    footer: "© 2026 Tutorly",
     settings: "Setări",
     languageLabel: "Limbă"
   },
@@ -15,7 +15,7 @@ const TRANSLATIONS = {
     title: "Tutorly",
     subtitle: "Your intelligent assistant, redefined for the future.",
     loginBtn: "Start Conversation",
-    footer: "© 2026 AI Interface • Minimalist Design",
+    footer: "© 2026 Tutorly" ,
     settings: "Settings",
     languageLabel: "Language"
   }
