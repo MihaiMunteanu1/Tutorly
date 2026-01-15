@@ -10,7 +10,6 @@ from typing import List, Optional, Dict, Any
 import re
 import jwt
 import requests
-import torch
 import whisper
 from dotenv import load_dotenv
 from fastapi import (
@@ -200,7 +199,7 @@ def login(data: LoginRequest):
     token = create_access_token(data.username)
     return LoginResponse(access_token=token)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("=== START BACKEND ===")
 print("=== LOAD WHISPER ===")
 whisper_model = whisper.load_model("base")
