@@ -129,11 +129,39 @@ const PRESETS: Preset[] = [
   },
 ];
 
+// async function fetchAvatarPreviewFromGroup(params: { token: string; groupId: string; avatarId: string }) {
+//   const res = await fetch(`${API_URL}/api/heygen/avatar-group/${params.groupId}/avatars`, {
+//     headers: { Authorization: `Bearer ${params.token}` },
+//   });
+//   if (!res.ok) return null;
+//   const json = await res.json();
+//   const list = json.data?.avatar_list ?? json.data?.avatars ?? [];
+//   const found = list.find((a: any) => a.avatar_id === params.avatarId);
+//   return found ? { imageUrl: found.preview_image_url, resolvedName: found.avatar_name } : null;
+// }
+//
+// async function fetchPhotoAvatarPreviewById(params: { token: string; photoAvatarId: string }) {
+//   const res = await fetch(`${API_URL}/api/heygen/photo-avatar/${params.photoAvatarId}`, {
+//     headers: { Authorization: `Bearer ${params.token}` },
+//   });
+//   if (!res.ok) return null;
+//   const json = await res.json();
+//   const data = json.data ?? {};
+//   return data?.image_url ? { imageUrl: data.image_url as string, resolvedName: (data.name as string) || "" } : null;
+// }
+
 async function fetchAvatarPreviewFromGroup(params: { token: string; groupId: string; avatarId: string }) {
-  const res = await fetch(`${API_URL}/api/heygen/avatar-group/${params.groupId}/avatars`, {
+  const url = `${API_URL}/api/heygen/avatar-group/${params.groupId}/avatars`;
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${params.token}` },
   });
-  if (!res.ok) return null;
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.error("Avatar group fetch failed", { url, status: res.status, text });
+    return null;
+  }
+
   const json = await res.json();
   const list = json.data?.avatar_list ?? json.data?.avatars ?? [];
   const found = list.find((a: any) => a.avatar_id === params.avatarId);
@@ -141,10 +169,17 @@ async function fetchAvatarPreviewFromGroup(params: { token: string; groupId: str
 }
 
 async function fetchPhotoAvatarPreviewById(params: { token: string; photoAvatarId: string }) {
-  const res = await fetch(`${API_URL}/api/heygen/photo-avatar/${params.photoAvatarId}`, {
+  const url = `${API_URL}/api/heygen/photo-avatar/${params.photoAvatarId}`;
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${params.token}` },
   });
-  if (!res.ok) return null;
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.error("Photo avatar fetch failed", { url, status: res.status, text });
+    return null;
+  }
+
   const json = await res.json();
   const data = json.data ?? {};
   return data?.image_url ? { imageUrl: data.image_url as string, resolvedName: (data.name as string) || "" } : null;
