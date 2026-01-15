@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
@@ -16,13 +16,16 @@ type AuthContextShape = {
   setLiveAvatarId?: (id: string | null) => void;
   setLiveAvatarVoiceId?: (id: string | null) => void;
 };
-type PresetKey = "mate" | "informatica" | "geografie" | "engleza";
+
+type PresetKey = "mate" | "informatica" | "geografie" | "engleza" | "ai" | "asc";
 type Preset = {
   key: PresetKey;
   liveAvatarVoiceId: string,
   liveAvatarId: string,
   avatarGroupId: string;
   avatarId: string;
+  /** For photo avatars (HeyGen /v2/photo_avatar/:id) */
+  photoAvatarId?: string;
   avatarName: string;
   voiceId: string;
   voiceName: string;
@@ -51,7 +54,13 @@ const TRANSLATIONS = {
       informatica: { title: "Informatica", desc: "Arhitectura Codului", long: "Explorează structurile de date și conceptele OOP într-un mod interactiv." },
       geografie: { title: "Geografie", desc: "Orizonturi Globale", long: "Hărți, relief și capitale explicate de un ghid digital pasionat." },
       mate: { title: "Matematica", desc: "Logica Pură", long: "De la algebră la trigonometrie, transformăm formulele în intuiție." },
-      engleza: { title: "Engleza", desc: "Fluență Lingvistică", long: "Exersează conversația și gramatica într-un dialog natural." }
+      engleza: { title: "Engleza", desc: "Fluență Lingvistică", long: "Exersează conversația și gramatica într-un dialog natural." },
+      ai: { title: "AI", desc: "Inteligență Artificială", long: "Învață concepte de AI / ML într-un mod clar și interactiv." },
+      asc: {
+        title: "ASC",
+        desc: "Arhitectura Sistemelor de Calcul",
+        long: "Arhitectura sistemelor de calcul cu Assembly și OllyDbg. De la registre la debugging practic."
+      }
     }
   },
   en: {
@@ -75,7 +84,13 @@ const TRANSLATIONS = {
       informatica: { title: "CompSci", desc: "Code Architecture", long: "Explore data structures and OOP concepts in an interactive way." },
       geografie: { title: "Geography", desc: "Global Horizons", long: "Maps, landforms, and capitals explained by a digital guide." },
       mate: { title: "Mathematics", desc: "Pure Logic", long: "From algebra to trigonometry, we turn formulas into intuition." },
-      engleza: { title: "English", desc: "Linguistic Fluency", long: "Practice conversation and grammar in a natural dialogue." }
+      engleza: { title: "English", desc: "Linguistic Fluency", long: "Practice conversation and grammar in a natural dialogue." },
+      ai: { title: "AI", desc: "Artificial Intelligence", long: "Learn AI / ML concepts in a clear, interactive way." },
+      asc: {
+        title: "ASC",
+        desc: "Computer Systems Architecture",
+        long: "Computer systems architecture with Assembly and OllyDbg. From registers to practical debugging."
+      }
     }
   }
 };
@@ -85,6 +100,33 @@ const PRESETS: Preset[] = [
   { key: "geografie",liveAvatarVoiceId:"4f3b1e99-b580-4f05-9b67-a5f585be0232",liveAvatarId:"b6c94c07-e4e5-483e-8bec-e838d5910b7d",  avatarGroupId: "1732323320", avatarId: "Judy_Teacher_Standing_public", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia", avatarName: "Judy" },
   { key: "mate",liveAvatarVoiceId:"de5574fc-009e-4a01-a881-9919ef8f5a0c", liveAvatarId:"513fd1b7-7ef9-466d-9af2-344e51eeb833", avatarGroupId: "1732832799", avatarId: "Ann_Therapist_public", voiceId: "da6a3889803f4ef29db3b9cdd7ec7135", voiceName: "Georgia", avatarName: "Ann" },
   { key: "engleza",liveAvatarVoiceId:"b952f553-f7f3-4e52-8625-86b4c415384f",liveAvatarId:"0930fd59-c8ad-434d-ad53-b391a1768720",  avatarGroupId: "1732323365", avatarId: "Dexter_Lawyer_Sitting_public", voiceId: "3787b4ab93174952a3ad649209f1029a", voiceName: "Georgia", avatarName: "Dexter" },
+
+  // AI subject (uploaded photo avatar). We must use GET /v2/photo_avatar/:id (proxied by backend).
+  // Leave Live IDs empty so /mode-selection shows only Chat + Video (no Live).
+  {
+    key: "ai",
+    liveAvatarVoiceId: "",
+    liveAvatarId: "",
+    avatarGroupId: "ffb7e0fb951b48dc96d099f28cc941a7",
+    avatarId: "1e529ae325674e14884735fe934a5d73",
+    photoAvatarId: "1e529ae325674e14884735fe934a5d73",
+    voiceId: "da6a3889803f4ef29db3b9cdd7ec7135",
+    voiceName: "Georgia",
+    avatarName: "Laura",
+  },
+
+  // ASC subject (photo avatar / talking_photo). No Live.
+  {
+    key: "asc",
+    liveAvatarVoiceId: "",
+    liveAvatarId: "",
+    avatarGroupId: "93f2fe1806564952a74c92e34e923121",
+    avatarId: "93f2fe1806564952a74c92e34e923121",
+    photoAvatarId: "93f2fe1806564952a74c92e34e923121",
+    voiceId: "f6b7acfc04264e9989a4de8c6596fcb0",
+    voiceName: "ASC",
+    avatarName: "ASC",
+  },
 ];
 
 async function fetchAvatarPreviewFromGroup(params: { token: string; groupId: string; avatarId: string }) {
@@ -96,6 +138,16 @@ async function fetchAvatarPreviewFromGroup(params: { token: string; groupId: str
   const list = json.data?.avatar_list ?? json.data?.avatars ?? [];
   const found = list.find((a: any) => a.avatar_id === params.avatarId);
   return found ? { imageUrl: found.preview_image_url, resolvedName: found.avatar_name } : null;
+}
+
+async function fetchPhotoAvatarPreviewById(params: { token: string; photoAvatarId: string }) {
+  const res = await fetch(`${API_URL}/api/heygen/photo-avatar/${params.photoAvatarId}`, {
+    headers: { Authorization: `Bearer ${params.token}` },
+  });
+  if (!res.ok) return null;
+  const json = await res.json();
+  const data = json.data ?? {};
+  return data?.image_url ? { imageUrl: data.image_url as string, resolvedName: (data.name as string) || "" } : null;
 }
 
 export function SubjectAvatarsPage() {
@@ -116,7 +168,10 @@ export function SubjectAvatarsPage() {
       setLoading(true);
       try {
         const entries = await Promise.all(PRESETS.map(async (p) => {
-          const preview = await fetchAvatarPreviewFromGroup({ token, groupId: p.avatarGroupId, avatarId: p.avatarId });
+          const preview = (p.key === "ai" || p.key === "asc") && p.photoAvatarId
+            ? await fetchPhotoAvatarPreviewById({ token, photoAvatarId: p.photoAvatarId })
+            : await fetchAvatarPreviewFromGroup({ token, groupId: p.avatarGroupId, avatarId: p.avatarId });
+
           return [p.key, { imageUrl: preview?.imageUrl ?? "", name: preview?.resolvedName ?? p.avatarName }] as const;
         }));
         if (!cancelled) setPreviewByKey(Object.fromEntries(entries));
@@ -147,7 +202,16 @@ export function SubjectAvatarsPage() {
 
   const onPickPreset = (p: Preset) => {
     const preview = previewByKey[p.key];
-    setAvatar({ id: p.avatarId, name: preview?.name ?? p.avatarName, image_url: preview?.imageUrl ?? "", avatar_type: "avatar" });
+
+    const isPhotoAvatar = (p.key === "ai" || p.key === "asc") && Boolean(p.photoAvatarId);
+    const pickedId = isPhotoAvatar ? (p.photoAvatarId as string) : p.avatarId;
+
+    setAvatar({
+      id: pickedId,
+      name: preview?.name ?? p.avatarName,
+      image_url: preview?.imageUrl ?? "",
+      avatar_type: isPhotoAvatar ? "talking_photo" : "avatar",
+    });
     setVoice({ id: p.voiceId, name: p.voiceName });
     setSelectionSource?.("preset");
     setLiveAvatarId?.(p.liveAvatarId);
@@ -394,4 +458,3 @@ const settingsMenu: React.CSSProperties = { width: '220px', padding: '16px', bac
 const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', fontSize: '13px' };
 const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '2px' };
 const langToggleBtn: React.CSSProperties = { border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' };
-const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#ffffff", padding: "8px", borderRadius: "12px", cursor: "pointer", display: "flex" };

@@ -428,6 +428,27 @@ def heygen_avatar_group_avatars(group_id: str, user: str = Depends(get_current_u
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"HeyGen proxy error: {e}")
 
+
+@app.get("/api/heygen/photo-avatar/{photo_avatar_id}")
+def heygen_photo_avatar(photo_avatar_id: str, user: str = Depends(get_current_user)) -> Dict[str, Any]:
+    """Proxy for HeyGen photo avatar details.
+
+    HeyGen endpoint: GET /v2/photo_avatar/{id}
+    Returns fields like: id, image_url, name, group_id, default_voice_id, ...
+    """
+    url = f"{HEYGEN_BASE_URL}/v2/photo_avatar/{photo_avatar_id}"
+    headers = {"X-Api-Key": HEYGEN_API_KEY, "Accept": "application/json"}
+    try:
+        resp = requests.get(url, headers=headers, timeout=30)
+        resp.raise_for_status()
+        return resp.json()
+    except requests.HTTPError as e:
+        status = e.response.status_code if e.response is not None else 502
+        detail = e.response.text if e.response is not None else str(e)
+        raise HTTPException(status_code=status, detail=detail)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"HeyGen proxy error: {e}")
+
 _SELECTION_BY_TOKEN: Dict[str, Dict[str, Any]] = {}
 _PHOTO_AVATAR_BY_TOKEN: Dict[str, Dict[str, Any]] = {}
 

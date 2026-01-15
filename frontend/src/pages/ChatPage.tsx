@@ -163,15 +163,15 @@ export function ChatPage() {
 
     try {
       const blobToSend = currentBlob || new Blob([finalMsg], { type: 'text/plain' });
-        const { job_id } = await uploadQuestion(
-          token,
-          voice.id,
-          blobToSend,
-          finalMsg,
-          avatar?.avatar_type === "avatar" ? (avatar?.id || "") : "",
-          avatar?.image_url,
-          avatar?.avatar_type === "talking_photo" ? (avatar?.id || "") : ""
-        );
+      const { job_id } = await uploadQuestion(
+        token,
+        voice.id,
+        blobToSend,
+        finalMsg,
+        avatar?.avatar_type === "avatar" ? (avatar?.id || "") : "",
+        avatar?.image_url,
+        avatar?.avatar_type === "talking_photo" ? (avatar?.id || "") : ""
+      );
       const interval = setInterval(async () => {
         const res = (await getJobStatus(token, job_id)) as unknown as JobStatus;
         const st = (res.status || "").toLowerCase();
@@ -188,11 +188,12 @@ export function ChatPage() {
           clearInterval(interval);
         }
       }, 4000);
-    } catch {
+    } catch (e: any) {
+      const raw = (e && typeof e === 'object' && 'message' in e) ? String((e as any).message) : 'Failed.';
       setInteractions(prev =>
         prev.map(item =>
           item.id === thinkingId
-            ? { ...item, text: "Failed.", isProcessing: false }
+            ? { ...item, text: raw, isProcessing: false }
             : item
         )
       );

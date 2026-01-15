@@ -122,7 +122,10 @@ export async function uploadQuestion(
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
   });
-  if (!res.ok) throw new Error("Cannot send question");
+  if (!res.ok) {
+    const textErr = await res.text().catch(() => "");
+    throw new Error(`Cannot send question: ${res.status} ${textErr}`);
+  }
   return res.json() as Promise<{ job_id: string }>;
 }
 

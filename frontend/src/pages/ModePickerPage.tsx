@@ -317,13 +317,15 @@ const TRANSLATIONS = {
     lang: "Language",
     logout: "Logout"
   }
-};
+} as const;
+
+type Lang = keyof typeof TRANSLATIONS;
 
 export function ModePickerPage() {
   const navigate = useNavigate();
   const { setToken } = useAuth();
 
-  const [lang, setLang] = useState('ro');
+  const [lang, setLang] = useState<Lang>('ro');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const t = TRANSLATIONS[lang];
 
@@ -488,3 +490,4 @@ const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px'
 const logoutActionBtn: React.CSSProperties = { background: "rgba(255, 69, 58, 0.1)", border: "1px solid rgba(255, 69, 58, 0.2)", color: "#ff453a", width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" };
 
 export default ModePickerPage;
+
