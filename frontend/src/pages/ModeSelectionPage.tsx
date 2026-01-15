@@ -15,6 +15,8 @@ const TRANSLATIONS = {
     liveDesc: "Conversație în timp real. Speak-and-respond cu latență minimă.",
     select: "Accesează",
     back: "Înapoi",
+    quizTitle: "Test (EN)",
+    quizDesc : "Testează-te cu un quiz generat de AI. Disponibil doar în limba engleză.",
   },
   en: {
     title: "Interaction Mode",
@@ -27,14 +29,20 @@ const TRANSLATIONS = {
     liveDesc: "Real-time conversation. Speak-and-respond with minimal latency and live presence.",
     select: "Access Mode",
     back: "Back",
+    quizTitle: "Quiz",
+    quizDesc: "Test your knowledge with an AI-generated quiz based on your lessons.",
+
   },
 };
 
 export function ModeSelectionPage() {
   const navigate = useNavigate();
+    const [settingsOpen, setSettingsOpen] = useState(false);
+
+
   const { token, avatar, voice, selectionSource, liveAvatarId, liveAvatarVoiceId } = useAuth() as any;
 
-  const [lang] = useState<"ro" | "en">("ro");
+  const [lang, setLang] = useState<"ro" | "en">("ro");
   const t = TRANSLATIONS[lang];
 
   const canUseLive = useMemo(() => {
@@ -171,10 +179,37 @@ export function ModeSelectionPage() {
               <div className="shimmer-pill" style={{ ...pillStyle, color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.3)', background: 'rgba(6, 182, 212, 0.05)' }}>{t.select}</div>
             </div>
           )}
+
+           {/* Chat Mode */}
+          <div className="mode-card elegant-entry" style={{ animationDelay: '0.2s' }} onClick={() => navigate("/quiz")}>
+            <div style={{ ...iconCircle, color: '#3572ef', background: 'rgba(53, 114, 239, 0.1)' }}>❓</div>
+            <h2 style={cardTitleStyle}>{t.quizTitle}</h2>
+            <p style={cardDescStyle}>{t.quizDesc}</p>
+            <div className="shimmer-pill" style={pillStyle}>{t.select}</div>
+          </div>
         </div>
       </div>
+
+       <div style={settingsContainer}>
+        {settingsOpen && (
+          <div style={settingsMenu}>
+            <div style={settingsRow}>
+              <div style={toggleGroup}>
+                <button onClick={() => setLang('ro')} style={{ ...langToggleBtn, background: lang === 'ro' ? '#3572ef' : 'transparent', color: '#fff' }}>RO</button>
+                <button onClick={() => setLang('en')} style={{ ...langToggleBtn, background: lang === 'en' ? '#3572ef' : 'transparent', color: '#fff' }}>EN</button>
+              </div>
+            </div>
+          </div>
+        )}
+        <button onClick={() => setSettingsOpen(!settingsOpen)} style={settingsFab}>
+          {settingsOpen ? '✕' : '⚙'}
+        </button>
+      </div>
     </div>
+
   );
+
+
 }
 
 // --- Style Objects ---
@@ -190,6 +225,12 @@ const headerLayout: React.CSSProperties = {
   marginBottom: "80px"
 };
 
+const settingsContainer: React.CSSProperties = { position: 'fixed', bottom: '40px', right: '40px', zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "15px" };
+const settingsFab: React.CSSProperties = { width: '56px', height: '56px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(28, 28, 30, 0.8)', color: '#fff', backdropFilter: 'blur(20px)', cursor: 'pointer', fontSize: '20px' };
+const settingsMenu: React.CSSProperties = { width: '220px', padding: '16px', borderRadius: '24px', background: 'rgba(13, 17, 23, 0.95)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(30px)', color: '#fff', display: 'flex', flexDirection: 'column', gap: '12px' };
+const settingsRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', fontWeight: 600 };
+const toggleGroup: React.CSSProperties = { display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '2px' };
+const langToggleBtn: React.CSSProperties = { border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 };
 const headerTextGroup: React.CSSProperties = { display: 'flex', flexDirection: 'column', alignItems: 'flex-start' };
 const superTag: React.CSSProperties = { color: '#3572ef', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4em', fontSize: '11px', marginBottom: '16px' };
 const titleTypography: React.CSSProperties = { fontSize: "64px", fontWeight: 800, letterSpacing: "-0.05em", margin: 0, lineHeight: 1 };
@@ -199,6 +240,18 @@ const gridContainer: React.CSSProperties = { display: "flex", gap: "32px", width
 const iconCircle: React.CSSProperties = { width: "80px", height: "80px", borderRadius: "30px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", marginBottom: "32px" };
 const cardTitleStyle: React.CSSProperties = { fontSize: "28px", fontWeight: 800, color: "#fff", margin: "0 0 12px 0", letterSpacing: "-0.02em" };
 const cardDescStyle: React.CSSProperties = { fontSize: "15px", color: "#6e7681", lineHeight: 1.6, margin: "0 0 40px 0", fontWeight: 500 };
-const pillStyle: React.CSSProperties = { padding: "12px 32px", borderRadius: "100px", border: '1px solid rgba(53, 114, 239, 0.3)', background: 'rgba(53, 114, 239, 0.05)', color: "#3572ef", fontSize: "12px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.15em" };
 
+
+const pillStyle: React.CSSProperties = {
+  marginTop: "auto", // Împinge butonul în partea de jos
+  padding: "12px 32px",
+  borderRadius: "100px",
+  border: "1px solid rgba(53, 114, 239, 0.3)",
+  background: "rgba(53, 114, 239, 0.05)",
+  color: "#3572ef",
+  fontSize: "12px",
+  fontWeight: 800,
+  textTransform: "uppercase",
+  letterSpacing: "0.15em",
+};
 const refinedBackBtn: React.CSSProperties = { height: "48px", padding: "0 28px", borderRadius: "100px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#fff", fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(10px)' };

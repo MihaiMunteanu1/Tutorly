@@ -1,3 +1,4 @@
+import json
 import os
 import smtplib
 from email.mime.text import MIMEText
@@ -6,7 +7,7 @@ import tempfile
 from datetime import datetime, timedelta
 from functools import lru_cache
 from typing import List, Optional, Dict, Any
-
+import re
 import jwt
 import requests
 import torch
@@ -45,6 +46,39 @@ HEYGEN_GENERATE_URL = "https://api.heygen.com/v2/video/generate"
 HEYGEN_STATUS_URL = "https://api.heygen.com/v1/video_status.get"
 HEYGEN_VOICES_URL = "https://api.heygen.com/v2/voices"
 HEYGEN_BASE_URL = "https://api.heygen.com"
+
+
+QUIZ_PROMPT = '''
+> You are an API endpoint that generates educational quizzes in strict JSON format.
+> **Output Rules:**
+> 1. **Raw JSON Only:** Return **only** the raw JSON string starting with `{` and ending with `}`. Do not include markdown formatting (like ```json), explanations, or conversational filler.
+> 2. **Accuracy Verification:** You must double-check that the `correctAnswerIndex` corresponds exactly to the position of the correct answer within the `answers` array (0 for the first option, 1 for the second, etc.). Ensure all factual data (capitals, formulas, dates) is objectively correct.
+> 3. **Answers**: Each question must have exactly four answer options.
+> 4. **Structure:** Make sure you respect JSON SYNTAX. Follow this exact JSON schema:
+>
+
+> ```json
+> {
+> "quizName": "String (Creative title)",
+> "subject": "String (e.g., Math, Geography, History)",
+> "questions": [
+> {
+> "questionText": "String",
+> "answers": [
+> "String (Option A)",
+> "String (Option B)",
+> "String (Option C)",
+> "String (Option D)"
+> ],
+> "correctAnswerIndex": Integer (0-3)
+> }
+> ]
+> }
+>
+> ```
+>
+>
+> **Task:** Generate a quiz based on the following description:'''
 
 if not HEYGEN_API_KEY:
     raise RuntimeError("Missing HEYGEN_API_KEY in .env")
@@ -119,6 +153,17 @@ class ContactEmailRequest(BaseModel):
     subject: str
     content: str
     to: str
+
+class Question(BaseModel):
+        questionText: str
+        answers: List[str]
+        correctAnswerIndex: int
+
+    # Definește structura pentru întregul Quiz
+class QuizResponse(BaseModel):
+        quizName: str
+        subject: str
+        questions: List[Question]
 
 app = FastAPI(title="Tutor Avatar API")
 
@@ -855,6 +900,10 @@ def get_question_status(job_id: str, user: str = Depends(get_current_user)):
 class ChatRequest(BaseModel):
     text: str
 
+class QuizRequest(BaseModel):
+    description: str
+
+
 class ChatResponse(BaseModel):
     text: str
 
@@ -1042,7 +1091,36 @@ def chat(req: ChatRequest, user: str = Depends(get_current_user)) -> ChatRespons
     reply = generate_reply_ollama(text)
     return ChatResponse(text=reply)
 
-# --- NEW: video generation using selected photo avatar + selected voice ---
+
+def clean_json_string(raw_string: str) -> str:
+    """
+    Curăță răspunsul LLM-ului.
+    """
+    # 1. Elimină markerii de markdown ```json
+    cleaned = re.sub(r"```json\s*", "", raw_string)
+    cleaned = re.sub(r"```\s*$", "", cleaned)
+
+    # 2. FIX CRITIC: Repară backslash-urile de la LaTeX/MathJax
+    # Transformă \( în \\( și \) în \\) pentru a nu crăpa JSON-ul
+    cleaned = cleaned.replace(r"\(", r"\\(")
+    cleaned = cleaned.replace(r"\)", r"\\)")
+    cleaned = cleaned.replace(r"\[", r"\\[")
+    cleaned = cleaned.replace(r"\]", r"\\]")
+
+    return cleaned.strip()
+
+@app.post("/quiz",response_model = QuizResponse)
+def chat(req: QuizRequest) -> QuizResponse:
+    text = (req.description or "").strip()
+    text = QUIZ_PROMPT + text
+    if not text:
+        raise HTTPException(status_code=400, detail="Empty text.")
+    reply = generate_reply_ollama(text)
+    cleaned_json = clean_json_string(reply)
+    quiz_data = json.loads(cleaned_json)
+
+    return quiz_data
+
 
 class VideoFromChatResponse(BaseModel):
     job_id: str
