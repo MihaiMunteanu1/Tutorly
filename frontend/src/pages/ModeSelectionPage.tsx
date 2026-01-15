@@ -15,7 +15,7 @@ const TRANSLATIONS = {
     liveDesc: "Conversație în timp real. Speak-and-respond cu latență minimă.",
     select: "Accesează",
     back: "Înapoi",
-    quizTitle: "Test (EN)",
+    quizTitle: "Test",
     quizDesc : "Testează-te cu un quiz generat de AI. Disponibil doar în limba engleză.",
   },
   en: {
