@@ -34,7 +34,7 @@ export function QuizPage() {
     setPhase('loading');
 
     try {
-      const res = await fetch('http://localhost:8000/quiz', {
+      const res = await fetch('https://avatar-server-gxmj.onrender.com/quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ description }),

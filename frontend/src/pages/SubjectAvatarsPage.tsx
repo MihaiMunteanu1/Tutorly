@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
-const API_URL = "http://localhost:8000";
+const API_URL = "https://avatar-server-gxmj.onrender.com";
 
 // --- Types ---
 type AvatarSelection = { id: string; name: string; image_url?: string; avatar_type?: "avatar" | "talking_photo" };

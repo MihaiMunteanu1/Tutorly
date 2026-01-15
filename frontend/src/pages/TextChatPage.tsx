@@ -9,7 +9,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
-const API_URL = "http://localhost:8000";
+const API_URL = "https://avatar-server-gxmj.onrender.com";
 
 const TRANSLATIONS = {
   ro: {
