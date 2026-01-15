@@ -327,67 +327,6 @@ def create_heygen_video_from_talking_photo_id(text: str, talking_photo_id: str, 
     return video_id
 
 
-# def create_heygen_video_from_avatar_id(text: str, avatar_id: str, voice_id: str) -> str:
-#     payload = {
-#         "title": "Avatar raspuns",
-#         "video_inputs": [
-#             {
-#                 "character": {
-#                     "type": "avatar",
-#                     "avatar_id": avatar_id,
-#                     "avatar_style": "normal",
-#                 },
-#                 "voice": {
-#                     "type": "text",
-#                     "voice_id": voice_id,
-#                     "input_text": text,
-#                 },
-#                 "background": {"type": "color", "value": "#000000"},
-#             }
-#         ],
-#         "dimension": {"width": 1280, "height": 720},
-#     }
-#     headers = {"X-Api-Key": HEYGEN_API_KEY, "Content-Type": "application/json", "Accept": "application/json"}
-#     resp = requests.post(HEYGEN_GENERATE_URL, json=payload, headers=headers, timeout=60)
-#     resp.raise_for_status()
-#     data = resp.json()
-#     video_id = data.get("data", {}).get("video_id") or data.get("video_id")
-#     if not video_id:
-#         raise RuntimeError(f"Missing video_id in HeyGen response: {data}")
-#     return video_id
-#
-# def create_heygen_video_from_photo_url(text: str, photo_url: str, voice_id: str) -> str:
-#     """
-#     Solution for \`no avatar_id\`: generate video using a photo/image character.
-#     HeyGen supports image/photo based character inputs in v2 video generate.
-#     """
-#     payload = {
-#         "title": "Photo avatar raspuns",
-#         "video_inputs": [
-#             {
-#                 "character": {
-#                     "type": "photo",
-#                     "photo_url": photo_url,
-#                 },
-#                 "voice": {
-#                     "type": "text",
-#                     "voice_id": voice_id,
-#                     "input_text": text,
-#                 },
-#                 "background": {"type": "color", "value": "#000000"},
-#             }
-#         ],
-#         "dimension": {"width": 1280, "height": 720},
-#     }
-#     headers = {"X-Api-Key": HEYGEN_API_KEY, "Content-Type": "application/json", "Accept": "application/json"}
-#     resp = requests.post(HEYGEN_GENERATE_URL, json=payload, headers=headers, timeout=60)
-#     resp.raise_for_status()
-#     data = resp.json()
-#     video_id = data.get("data", {}).get("video_id") or data.get("video_id")
-#     if not video_id:
-#         raise RuntimeError(f"Missing video_id in HeyGen response: {data}")
-#     return video_id
-
 def get_heygen_status(video_id: str) -> dict:
     headers = {"X-Api-Key": HEYGEN_API_KEY, "Accept": "application/json"}
     resp = requests.get(HEYGEN_STATUS_URL, headers=headers, params={"video_id": video_id}, timeout=30)
@@ -556,49 +495,12 @@ def get_selection(
         raise HTTPException(status_code=404, detail="No selection stored.")
     return sel
 
-
-# --- NEW: HeyGen photo avatar generation proxy ---
-
-# class PhotoAvatarGenerateRequest(BaseModel):
-#     age: str
-#     gender: str
-#     ethnicity: str
-#     orientation: str
-#     pose: str
-#     style: str
-
-# class PhotoAvatarGenerateResponse(BaseModel):
-#     generation_id: str
-#
 class PhotoAvatarStatusResponse(BaseModel):
     id: str
     status: str
     msg: Optional[str] = None
     image_url_list: List[str] = []
     image_key_list: List[str] = []
-
-
-#
-# @app.post("/api/heygen/photo-avatar/generate", response_model=PhotoAvatarGenerateResponse)
-# def photo_avatar_generate(
-#     payload: PhotoAvatarGenerateRequest,
-#     creds: HTTPAuthorizationCredentials = Depends(security),
-#     user: str = Depends(get_current_user),
-# ) -> PhotoAvatarGenerateResponse:
-#     url = f"{HEYGEN_BASE_URL}/v2/photo_avatar/photo/generate"
-#     headers = {
-#         "accept": "application/json",
-#         "content-type": "application/json",
-#         "x-api-key": HEYGEN_API_KEY,
-#     }
-#     resp = requests.post(url, json=payload.model_dump(), headers=headers, timeout=60)
-#     if not resp.ok:
-#         raise HTTPException(status_code=resp.status_code, detail=resp.text)
-#     data = resp.json()
-#     generation_id = (data.get("data") or {}).get("generation_id")
-#     if not generation_id:
-#         raise HTTPException(status_code=502, detail=f"Unexpected HeyGen response: {data}")
-#     return PhotoAvatarGenerateResponse(generation_id=generation_id)
 
 class PhotoAvatarGenerateRequest(BaseModel):
     name: str
@@ -859,39 +761,6 @@ async def ask_question(
 
     return QuestionResponse(job_id=video_id)
 
-
-# @app.post("/questions", response_model=QuestionResponse)
-# async def ask_question(
-#     avatar_id: str = Form(...),
-#     voice_id: str = Form(...),
-#     audio: UploadFile = File(...),
-#     avatar_url: str = Form(...)  ,
-#     text: str = Form(...),
-#     user: str = Depends(get_current_user),
-# ):
-#     if not text :
-#         try:
-#             with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
-#                 content = await audio.read()
-#                 tmp.write(content)
-#                 tmp_path = tmp.name
-#         except Exception as e:
-#             raise HTTPException(status_code=500, detail=f"Failed saving audio: {e}")
-#
-#     try:
-#         if not text:
-#             student_text = transcribe_audio_file(tmp_path)
-#         else :
-#             student_text = text
-#         tutor_reply = generate_reply_ollama(student_text)
-#         if avatar_id:
-#             video_id = create_heygen_video_from_avatar_id(tutor_reply, avatar_id, voice_id)
-#         elif avatar_url:
-#             video_id = create_heygen_video_from_photo_url(tutor_reply, avatar_url, voice_id)
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Processing error ({type(e).__name__}): {e}")
-#
-#     return QuestionResponse(job_id=video_id)
 
 @app.get("/questions/{job_id}", response_model=QuestionStatusResponse)
 def get_question_status(job_id: str, user: str = Depends(get_current_user)):
