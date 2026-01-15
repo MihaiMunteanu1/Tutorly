@@ -23,7 +23,7 @@ const TRANSLATIONS = {
 
 export default function IntroPage() {
   const navigate = useNavigate();
-  const [lang, setLang] = useState('en');
+  const [lang, setLang] = useState<keyof typeof TRANSLATIONS>('en');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const t = TRANSLATIONS[lang];
 
