@@ -7,24 +7,24 @@ import { useAuth } from "../auth/AuthContext";
 const TRANSLATIONS = {
   ro: {
     title: "Biblioteca de Avatare",
-    subtitle: "Sistem online. Selectează expertul digital pentru sesiunea curentă.",
+    subtitle: "Sistem online. Selectează tutorul digital pentru sesiunea curentă.",
     loading: "Se analizează baza de date...",
     error: "Eroare la încărcarea datelor. Verifică conexiunea.",
     back: "Înapoi",
     noPreview: "Fără preview",
-    select: "Selectează Expert",
+    select: "Selectează Tutor",
     settings: "Setări",
     languageLabel: "Limbă",
     logout: "Deconectare"
   },
   en: {
     title: "Avatar Library",
-    subtitle: "System online. Select the digital expert for your current session.",
+    subtitle: "System online. Select the digital tutor for your current session.",
     loading: "Analyzing neural database...",
     error: "Database error. Check your connection.",
     back: "Back",
     noPreview: "No preview",
-    select: "Select Expert",
+    select: "Select Tutor",
     settings: "Settings",
     languageLabel: "Language",
     logout: "Logout"

@@ -6,7 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 // --- Translation Dictionary ---
 const TRANSLATIONS = {
   ro: {
-    title: "Vibrația Tutorului",
+    title: "Vocea Tutorului",
     subtitle: "Sistem online. Configurează profilul acustic al expertului tău.",
     loading: "Se calibrează frecvențele...",
     error: "Eroare de conexiune. Nu s-au putut prelua profilele vocale.",
@@ -18,7 +18,7 @@ const TRANSLATIONS = {
     logout: "Deconectare"
   },
   en: {
-    title: "Tutor Vibration",
+    title: "Tutor Voice",
     subtitle: "System online. Configure the acoustic profile of your expert.",
     loading: "Calibrating frequencies...",
     error: "Connection error. Could not retrieve voice profiles.",
