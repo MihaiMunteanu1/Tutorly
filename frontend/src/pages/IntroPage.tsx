@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 // --- Translation Dictionary ---
 const TRANSLATIONS = {
   ro: {
-    title: "AI Chat",
+    title: "Tutorly",
     subtitle: "Asistentul tău inteligent, redefinit pentru viitor.",
     loginBtn: "Începe Conversația",
     footer: "© 2026 AI Interface • Design Minimalist",
@@ -12,7 +12,7 @@ const TRANSLATIONS = {
     languageLabel: "Limbă"
   },
   en: {
-    title: "AI Chat",
+    title: "Tutorly",
     subtitle: "Your intelligent assistant, redefined for the future.",
     loginBtn: "Start Conversation",
     footer: "© 2026 AI Interface • Minimalist Design",
@@ -95,9 +95,11 @@ export default function IntroPage() {
       {/* 2. Main Cinematic Content */}
       <main style={heroWrapper}>
         <div className="animate-reveal delay-1" style={titleGroup}>
-          <span style={superTitle}>Intelligence Redefined</span>
+          <img src="/TUTORLY_LOGO.png" rel={"icon"} style={{width: '120px', marginBottom: '20px'}}/>
+                    <span style={superTitle}>Intelligence Redefined</span>
           <h1 className="living-title" style={mainTitle}>{t.title}</h1>
-          <div style={decorativeLine} />
+
+          <div style={decorativeLine}/>
         </div>
 
         <p className="animate-reveal delay-2" style={heroSubtitle}>{t.subtitle}</p>
@@ -180,14 +182,15 @@ const mainTitle: React.CSSProperties = {
   fontSize: '100px',
   fontWeight: 800,
   letterSpacing: '-0.06em',
-  lineHeight: 0.9,
+  lineHeight: 1.1,
+  paddingBottom: 10
 };
 
 const decorativeLine: React.CSSProperties = {
   width: '60px',
   height: '3px',
   background: '#3572ef',
-  marginTop: '40px',
+  marginTop: '10px',
   borderRadius: '2px',
 };
 
