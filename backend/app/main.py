@@ -10,6 +10,7 @@ from typing import List, Optional, Dict, Any
 import re
 import jwt
 import requests
+import torch
 import whisper
 from dotenv import load_dotenv
 from fastapi import (
@@ -45,7 +46,6 @@ HEYGEN_GENERATE_URL = "https://api.heygen.com/v2/video/generate"
 HEYGEN_STATUS_URL = "https://api.heygen.com/v1/video_status.get"
 HEYGEN_VOICES_URL = "https://api.heygen.com/v2/voices"
 HEYGEN_BASE_URL = "https://api.heygen.com"
-
 
 QUIZ_PROMPT = '''
 > You are an API endpoint that generates educational quizzes in strict JSON format.
@@ -100,12 +100,14 @@ AVATAR_GROUP_IDS: List[str] = [
     "1727398774",
 ]
 
+
 class Avatar(BaseModel):
     id: str
     name: str
     image_url: Optional[str] = None
     preview_video_url: Optional[str] = None
     gender: Optional[str] = None
+
 
 class Voice(BaseModel):
     id: str
@@ -114,16 +116,20 @@ class Voice(BaseModel):
     gender: Optional[str] = None
     preview_audio: Optional[str] = None
 
+
 class LoginRequest(BaseModel):
     username: str
     password: str
+
 
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+
 class QuestionResponse(BaseModel):
     job_id: str
+
 
 class QuestionStatusResponse(BaseModel):
     status: str
@@ -132,18 +138,22 @@ class QuestionStatusResponse(BaseModel):
     error_message: Optional[str] = None
     raw_status: Optional[dict] = None
 
+
 class AvatarSelection(BaseModel):
     id: str
     name: str = ""
     image_url: str = ""
 
+
 class VoiceSelection(BaseModel):
     id: str
     name: str = ""
 
+
 class SelectionPayload(BaseModel):
     avatar: AvatarSelection
     voice: VoiceSelection
+
 
 class ContactEmailRequest(BaseModel):
     firstName: str
@@ -153,16 +163,19 @@ class ContactEmailRequest(BaseModel):
     content: str
     to: str
 
-class Question(BaseModel):
-        questionText: str
-        answers: List[str]
-        correctAnswerIndex: int
 
-    # Definește structura pentru întregul Quiz
+class Question(BaseModel):
+    questionText: str
+    answers: List[str]
+    correctAnswerIndex: int
+
+
+# Definește structura pentru întregul Quiz
 class QuizResponse(BaseModel):
-        quizName: str
-        subject: str
-        questions: List[Question]
+    quizName: str
+    subject: str
+    questions: List[Question]
+
 
 app = FastAPI(title="Tutor Avatar API")
 
@@ -178,9 +191,11 @@ security = HTTPBearer()
 
 FAKE_USERS_DB = {"Student": "parola123"}
 
+
 def create_access_token(username: str) -> str:
     payload = {"sub": username, "exp": datetime.utcnow() + timedelta(hours=8)}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALG)
+
 
 def get_current_user(token: HTTPAuthorizationCredentials = Depends(security)) -> str:
     try:
@@ -192,6 +207,7 @@ def get_current_user(token: HTTPAuthorizationCredentials = Depends(security)) ->
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token.")
 
+
 @app.post("/auth/login", response_model=LoginResponse)
 def login(data: LoginRequest):
     if data.username not in FAKE_USERS_DB or FAKE_USERS_DB[data.username] != data.password:
@@ -199,15 +215,18 @@ def login(data: LoginRequest):
     token = create_access_token(data.username)
     return LoginResponse(access_token=token)
 
-#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("=== START BACKEND ===")
 print("=== LOAD WHISPER ===")
 whisper_model = whisper.load_model("base")
 print("Whisper loaded.")
 model = OllamaTeacher()
 
+
 def generate_reply_ollama(student_question: str) -> str:
     return model.ask(student_question)
+
 
 def transcribe_audio_file(filepath: str) -> str:
     try:
@@ -218,6 +237,7 @@ def transcribe_audio_file(filepath: str) -> str:
     if not text:
         raise RuntimeError("No speech recognized from audio.")
     return text
+
 
 def create_heygen_video_from_avatar_id(text: str, avatar_id: str, voice_id: str) -> str:
     payload = {
@@ -245,6 +265,7 @@ def create_heygen_video_from_avatar_id(text: str, avatar_id: str, voice_id: str)
     if not video_id:
         raise HTTPException(status_code=502, detail=f"Missing video_id in HeyGen response: {data}")
     return video_id
+
 
 def create_heygen_video_from_photo_url(text: str, photo_url: str, voice_id: str) -> str:
     payload = {
@@ -304,6 +325,7 @@ def create_heygen_video_from_talking_photo_id(text: str, talking_photo_id: str, 
     if not video_id:
         raise HTTPException(status_code=502, detail=f"Missing video_id in HeyGen response: {data}")
     return video_id
+
 
 # def create_heygen_video_from_avatar_id(text: str, avatar_id: str, voice_id: str) -> str:
 #     payload = {
@@ -372,6 +394,7 @@ def get_heygen_status(video_id: str) -> dict:
     resp.raise_for_status()
     return resp.json().get("data", {})
 
+
 def fetch_one_avatar_from_group(group_id: str) -> Optional[Avatar]:
     url = f"{HEYGEN_BASE_URL}/v2/avatar_group/{group_id}/avatars"
     headers = {"X-Api-Key": HEYGEN_API_KEY, "Accept": "application/json"}
@@ -398,6 +421,7 @@ def fetch_one_avatar_from_group(group_id: str) -> Optional[Avatar]:
         gender=item.get("gender"),
     )
 
+
 def fetch_avatars_from_heygen() -> List[Avatar]:
     avatars: List[Avatar] = []
     for group_id in AVATAR_GROUP_IDS:
@@ -406,6 +430,7 @@ def fetch_avatars_from_heygen() -> List[Avatar]:
             avatars.append(a)
     return avatars
 
+
 @lru_cache(maxsize=1)
 def get_cached_avatars() -> List[Avatar]:
     try:
@@ -413,12 +438,14 @@ def get_cached_avatars() -> List[Avatar]:
     except Exception:
         return []
 
+
 @app.get("/avatars", response_model=List[Avatar])
 def list_avatars(user: str = Depends(get_current_user)):
     avatars = get_cached_avatars()
     if not avatars:
         return [Avatar(id="Abigail_standing_office_front", name="Abigail Office Front", image_url=None)]
     return avatars
+
 
 @lru_cache(maxsize=1)
 def get_cached_voices() -> List[Voice]:
@@ -450,12 +477,14 @@ def get_cached_voices() -> List[Voice]:
     voices = list(by_name.values())
     return voices[:20] if len(voices) > 20 else voices
 
+
 @app.get("/voices", response_model=List[Voice])
 def list_voices(user: str = Depends(get_current_user)):
     voices = get_cached_voices()
     if not voices:
         raise HTTPException(status_code=500, detail="Cannot load HeyGen voices.")
     return voices
+
 
 @app.get("/api/heygen/avatar-group/{group_id}/avatars")
 def heygen_avatar_group_avatars(group_id: str, user: str = Depends(get_current_user)) -> Dict[str, Any]:
@@ -493,17 +522,20 @@ def heygen_photo_avatar(photo_avatar_id: str, user: str = Depends(get_current_us
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"HeyGen proxy error: {e}")
 
+
 _SELECTION_BY_TOKEN: Dict[str, Dict[str, Any]] = {}
 _PHOTO_AVATAR_BY_TOKEN: Dict[str, Dict[str, Any]] = {}
+
 
 def _token_key_from_bearer(creds: HTTPAuthorizationCredentials) -> str:
     return creds.credentials
 
+
 @app.post("/api/session/selection")
 def set_selection(
-    payload: SelectionPayload,
-    creds: HTTPAuthorizationCredentials = Depends(security),
-    user: str = Depends(get_current_user),
+        payload: SelectionPayload,
+        creds: HTTPAuthorizationCredentials = Depends(security),
+        user: str = Depends(get_current_user),
 ) -> Dict[str, Any]:
     token_key = _token_key_from_bearer(creds)
     _SELECTION_BY_TOKEN[token_key] = {
@@ -512,16 +544,18 @@ def set_selection(
     }
     return {"ok": True}
 
+
 @app.get("/api/session/selection")
 def get_selection(
-    creds: HTTPAuthorizationCredentials = Depends(security),
-    user: str = Depends(get_current_user),
+        creds: HTTPAuthorizationCredentials = Depends(security),
+        user: str = Depends(get_current_user),
 ) -> Dict[str, Any]:
     token_key = _token_key_from_bearer(creds)
     sel = _SELECTION_BY_TOKEN.get(token_key)
     if not sel:
         raise HTTPException(status_code=404, detail="No selection stored.")
     return sel
+
 
 # --- NEW: HeyGen photo avatar generation proxy ---
 
@@ -542,6 +576,8 @@ class PhotoAvatarStatusResponse(BaseModel):
     msg: Optional[str] = None
     image_url_list: List[str] = []
     image_key_list: List[str] = []
+
+
 #
 # @app.post("/api/heygen/photo-avatar/generate", response_model=PhotoAvatarGenerateResponse)
 # def photo_avatar_generate(
@@ -574,13 +610,15 @@ class PhotoAvatarGenerateRequest(BaseModel):
     style: str
     appearance: Optional[str] = None
 
+
 class PhotoAvatarGenerateResponse(BaseModel):
     generation_id: str
 
+
 @app.post("/api/heygen/photo-avatar/generate", response_model=PhotoAvatarGenerateResponse)
 def photo_avatar_generate(
-    req: PhotoAvatarGenerateRequest,
-    user: str = Depends(get_current_user),
+        req: PhotoAvatarGenerateRequest,
+        user: str = Depends(get_current_user),
 ) -> PhotoAvatarGenerateResponse:
     url = f"{HEYGEN_BASE_URL}/v2/photo_avatar/photo/generate"
     headers = {
@@ -612,11 +650,12 @@ def photo_avatar_generate(
 
     return PhotoAvatarGenerateResponse(generation_id=gen_id)
 
+
 @app.get("/api/heygen/photo-avatar/status/{generation_id}", response_model=PhotoAvatarStatusResponse)
 def photo_avatar_status(
-    generation_id: str,
-    creds: HTTPAuthorizationCredentials = Depends(security),
-    user: str = Depends(get_current_user),
+        generation_id: str,
+        creds: HTTPAuthorizationCredentials = Depends(security),
+        user: str = Depends(get_current_user),
 ) -> PhotoAvatarStatusResponse:
     url = f"{HEYGEN_BASE_URL}/v2/photo_avatar/generation/{generation_id}"
     headers = {"accept": "application/json", "x-api-key": HEYGEN_API_KEY}
@@ -632,6 +671,7 @@ def photo_avatar_status(
         image_url_list=list(data.get("image_url_list") or []),
         image_key_list=list(data.get("image_key_list") or []),
     )
+
 
 class PhotoAvatarPickRequest(BaseModel):
     # keep old field for backwards compat
@@ -653,8 +693,8 @@ class PhotoAvatarGroupCreateResponse(BaseModel):
 
 @app.post("/api/heygen/photo-avatar/avatar-group/create", response_model=PhotoAvatarGroupCreateResponse)
 def photo_avatar_group_create(
-    req: PhotoAvatarGroupCreateRequest,
-    user: str = Depends(get_current_user),
+        req: PhotoAvatarGroupCreateRequest,
+        user: str = Depends(get_current_user),
 ) -> PhotoAvatarGroupCreateResponse:
     url = f"{HEYGEN_BASE_URL}/v2/photo_avatar/avatar_group/create"
     headers = {
@@ -683,9 +723,9 @@ def photo_avatar_group_create(
 
 @app.post("/api/session/photo-avatar")
 def set_photo_avatar(
-    payload: PhotoAvatarPickRequest,
-    creds: HTTPAuthorizationCredentials = Depends(security),
-    user: str = Depends(get_current_user),
+        payload: PhotoAvatarPickRequest,
+        creds: HTTPAuthorizationCredentials = Depends(security),
+        user: str = Depends(get_current_user),
 ) -> Dict[str, Any]:
     token_key = _token_key_from_bearer(creds)
     _PHOTO_AVATAR_BY_TOKEN[token_key] = {
@@ -696,6 +736,7 @@ def set_photo_avatar(
     }
     return {"ok": True}
 
+
 # --- NEW: Email Sending Endpoint ---
 
 @app.post("/api/send-email")
@@ -704,8 +745,8 @@ def send_email(req: ContactEmailRequest):
     # Exemplu pentru Gmail: server="smtp.gmail.com", port=587
     smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    smtp_user = os.getenv("SMTP_USERNAME", "") 
-    smtp_pass = os.getenv("SMTP_PASSWORD", "") 
+    smtp_user = os.getenv("SMTP_USERNAME", "")
+    smtp_pass = os.getenv("SMTP_PASSWORD", "")
 
     # Daca nu avem credentiale, simulam trimiterea (print in consola serverului)
     if not smtp_user or not smtp_pass:
@@ -742,24 +783,25 @@ Mesaj:
         text = msg.as_string()
         server.sendmail(smtp_user, req.to, text)
         server.quit()
-        
+
         return {"message": "Email sent successfully"}
     except Exception as e:
         print(f"SMTP Error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
 
+
 # --- Existing endpoints (unchanged) ---
 
 @app.post("/questions", response_model=QuestionResponse)
 async def ask_question(
-    avatar_id: str = Form(""),
-    talking_photo_id: str = Form(""),
-    voice_id: str = Form(...),
-    audio: UploadFile = File(...),
-    avatar_url: str = Form(""),
-    text: str = Form(""),
-    creds: HTTPAuthorizationCredentials = Depends(security),
-    user: str = Depends(get_current_user),
+        avatar_id: str = Form(""),
+        talking_photo_id: str = Form(""),
+        voice_id: str = Form(...),
+        audio: UploadFile = File(...),
+        avatar_url: str = Form(""),
+        text: str = Form(""),
+        creds: HTTPAuthorizationCredentials = Depends(security),
+        user: str = Depends(get_current_user),
 ):
     avatar_id = (avatar_id or "").strip()
     talking_photo_id = (talking_photo_id or "").strip()
@@ -802,7 +844,7 @@ async def ask_question(
             elif session_photo_url:
                 video_id = create_heygen_video_from_photo_url(tutor_reply, session_photo_url, voice_id)
             else:
-                raise HTTPException(status_code=400, detail="Missing avatar id or talking photo id.")
+                raise HTTPException(status_code=400, detail="Missing avatarid or talking_photo_id.")
 
     except HTTPException:
         raise
@@ -816,6 +858,7 @@ async def ask_question(
                 pass
 
     return QuestionResponse(job_id=video_id)
+
 
 # @app.post("/questions", response_model=QuestionResponse)
 # async def ask_question(
@@ -896,8 +939,10 @@ def get_question_status(job_id: str, user: str = Depends(get_current_user)):
         raw_status=data,
     )
 
+
 class ChatRequest(BaseModel):
     text: str
+
 
 class QuizRequest(BaseModel):
     description: str
@@ -906,11 +951,13 @@ class QuizRequest(BaseModel):
 class ChatResponse(BaseModel):
     text: str
 
+
 # -----------------------------
 # LiveAvatar (LiveChat) endpoints
 # -----------------------------
 
 LIVEAVATAR_BASE_URL = "https://api.liveavatar.com"
+
 
 class LiveAvatarTokenRequest(BaseModel):
     # allow frontend to override if you want, but defaults are set from env
@@ -920,9 +967,11 @@ class LiveAvatarTokenRequest(BaseModel):
     language: Optional[str] = "en"
     mode: Optional[str] = "FULL"  # FULL recommended for interactive chat
 
+
 class LiveAvatarTokenResponse(BaseModel):
     session_id: str
     session_token: str
+
 
 class LiveAvatarStartResponse(BaseModel):
     session_id: str
@@ -932,9 +981,11 @@ class LiveAvatarStartResponse(BaseModel):
     max_session_duration: Optional[int] = None
     ws_url: Optional[str] = None
 
+
 class LiveAvatarStopRequest(BaseModel):
     session_id: str
     reason: Optional[str] = "USER_CLOSED"
+
 
 class LiveAvatarStopResponse(BaseModel):
     ok: bool
@@ -945,10 +996,11 @@ def _require_liveavatar_key() -> str:
         raise HTTPException(status_code=500, detail="Missing HEYGEN_API_LIVEAVATAR_KEY in .env")
     return HEYGEN_API_LIVEAVATAR_KEY
 
+
 @app.post("/api/livechat/token", response_model=LiveAvatarTokenResponse)
 def livechat_create_session_token(
-    req: LiveAvatarTokenRequest,
-    user: str = Depends(get_current_user),
+        req: LiveAvatarTokenRequest,
+        user: str = Depends(get_current_user),
 ) -> LiveAvatarTokenResponse:
     api_key = _require_liveavatar_key()
 
@@ -980,8 +1032,7 @@ def livechat_create_session_token(
 
     context_id = context_by_live_avatar_id.get(avatar_id, contextEnlgishId)
 
-
-    #context_id = (req.context_id or HEYGEN_LIVEAVATAR_CONTEXT_ID).strip()
+    # context_id = (req.context_id or HEYGEN_LIVEAVATAR_CONTEXT_ID).strip()
     language = (req.language or "en").strip() or "en"
     mode = (req.mode or "FULL").strip().upper()
 
@@ -1017,10 +1068,11 @@ def livechat_create_session_token(
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"LiveAvatar token error: {type(e).__name__}: {e}")
 
+
 @app.post("/api/livechat/start", response_model=LiveAvatarStartResponse)
 def livechat_start(
-    session_token: str = Form(""),
-    user: str = Depends(get_current_user),
+        session_token: str = Form(""),
+        user: str = Depends(get_current_user),
 ) -> LiveAvatarStartResponse:
     session_token = (session_token or "").strip()
     if not session_token:
@@ -1055,10 +1107,11 @@ def livechat_start(
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"LiveAvatar start error: {type(e).__name__}: {e}")
 
+
 @app.post("/api/livechat/stop", response_model=LiveAvatarStopResponse)
 def livechat_stop(
-    req: LiveAvatarStopRequest,
-    user: str = Depends(get_current_user),
+        req: LiveAvatarStopRequest,
+        user: str = Depends(get_current_user),
 ) -> LiveAvatarStopResponse:
     api_key = _require_liveavatar_key()
 
@@ -1081,6 +1134,7 @@ def livechat_stop(
         raise
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"LiveAvatar stop error: {type(e).__name__}: {e}")
+
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest, user: str = Depends(get_current_user)) -> ChatResponse:
@@ -1108,7 +1162,8 @@ def clean_json_string(raw_string: str) -> str:
 
     return cleaned.strip()
 
-@app.post("/quiz",response_model = QuizResponse)
+
+@app.post("/quiz", response_model=QuizResponse)
 def chat(req: QuizRequest) -> QuizResponse:
     text = (req.description or "").strip()
     text = QUIZ_PROMPT + text
@@ -1124,11 +1179,12 @@ def chat(req: QuizRequest) -> QuizResponse:
 class VideoFromChatResponse(BaseModel):
     job_id: str
 
+
 @app.post("/api/video/from-chat", response_model=VideoFromChatResponse)
 def video_from_chat(
-    req: ChatRequest,
-    creds: HTTPAuthorizationCredentials = Depends(security),
-    user: str = Depends(get_current_user),
+        req: ChatRequest,
+        creds: HTTPAuthorizationCredentials = Depends(security),
+        user: str = Depends(get_current_user),
 ) -> VideoFromChatResponse:
     token_key = _token_key_from_bearer(creds)
 
@@ -1159,6 +1215,7 @@ def video_from_chat(
     video_id = create_heygen_video_from_photo_url(reply, photo_url, voice_id)
     return VideoFromChatResponse(job_id=video_id)
 
+
 def _heygen_post_generate(payload: dict) -> dict:
     headers = {
         "X-Api-Key": HEYGEN_API_KEY,
@@ -1178,6 +1235,7 @@ def _heygen_post_generate(payload: dict) -> dict:
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"HeyGen generate error: {type(e).__name__}: {e}")
 
+
 # --- NEW: LiveKit Agent control endpoints ---
 
 class LiveAvatarAgentStartRequest(BaseModel):
@@ -1186,13 +1244,15 @@ class LiveAvatarAgentStartRequest(BaseModel):
     livekit_agent_token: str
     avatar_id: Optional[str] = None
 
+
 class LiveAvatarAgentStatusResponse(BaseModel):
     running: bool
 
+
 @app.post("/api/livechat/agent/start", response_model=LiveAvatarStopResponse)
 def livechat_agent_start(
-    req: LiveAvatarAgentStartRequest,
-    user: str = Depends(get_current_user),
+        req: LiveAvatarAgentStartRequest,
+        user: str = Depends(get_current_user),
 ) -> LiveAvatarStopResponse:
     avatar_id = (req.avatar_id or HEYGEN_LIVEAVATAR_AVATAR_ID).strip()
 
@@ -1216,14 +1276,16 @@ def livechat_agent_start(
 
     return LiveAvatarStopResponse(ok=True)
 
+
 @app.get("/api/livechat/agent/status/{session_id}", response_model=LiveAvatarAgentStatusResponse)
 def livechat_agent_status(session_id: str, user: str = Depends(get_current_user)) -> LiveAvatarAgentStatusResponse:
     return LiveAvatarAgentStatusResponse(running=AGENT_MANAGER.is_running(session_id))
 
+
 @app.post("/api/livechat/agent/stop", response_model=LiveAvatarStopResponse)
 def livechat_agent_stop(
-    req: LiveAvatarStopRequest,
-    user: str = Depends(get_current_user),
+        req: LiveAvatarStopRequest,
+        user: str = Depends(get_current_user),
 ) -> LiveAvatarStopResponse:
     import asyncio
     try:
