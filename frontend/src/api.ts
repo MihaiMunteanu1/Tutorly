@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:8000";
+const API_URL = "https://avatar-server-gxmj.onrender.com"
+    //"http://localhost:8000";
 
 export type Avatar = {
   id: string;
