@@ -803,7 +803,7 @@ async def ask_question(
             elif session_photo_url:
                 video_id = create_heygen_video_from_photo_url(tutor_reply, session_photo_url, voice_id)
             else:
-                raise HTTPException(status_code=400, detail="Missing avatar_id or talking_photo_id.")
+                raise HTTPException(status_code=400, detail="Missing avatar id or talking photo id.")
 
     except HTTPException:
         raise
