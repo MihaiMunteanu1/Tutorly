@@ -12,6 +12,7 @@ import { LiveChatPage } from "./pages/LiveChatPage";
 import IntroPage from "./pages/IntroPage";
 import { ParticleBackground } from "./components/ParticleBackground";
 import { ModeSelectionPage } from "./pages/ModeSelectionPage";
+import {QuizPage} from "./pages/QuizPage";
 
 export function App() {
   return (
@@ -32,7 +33,7 @@ export function App() {
               <Route path="/mode-selection" element={<ModeSelectionPage />} />
               {/* backward compat */}
               <Route path="/mode" element={<Navigate to="/mode-selection" replace />} />
-
+              <Route path="/quiz" element = {<QuizPage />} />
               <Route path="/text-chat" element={<TextChatPage />} />
               <Route path="/livechat" element={<LiveChatPage />} />
               <Route path="/chat" element={<ChatPage />} />
