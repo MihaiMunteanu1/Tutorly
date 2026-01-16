@@ -2,7 +2,7 @@
 
 **Tutorly** este o platformă educațională care transformă un avatar (inclusiv dintr-o fotografie) într-un **profesor digital expresiv** (text + voce + video). Acesta explică conceptele **pas cu pas**, într-un stil conversațional, combinând tutoratul AI, gamificarea și urmărirea progresului pentru a crește implicarea elevilor.
 
-🌐 **Live demo:** [https://tutorly-vert.vercel.app](https://tutorly-vert.vercel.app)
+🌐 **Live demo:** [https://tutorly-indol.vercel.app](https://tutorly-indol.vercel.app)
 
 ---
 
