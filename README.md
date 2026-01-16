@@ -1,135 +1,136 @@
-# Tutorly — Profesorul tău digital (AI Tutor)
+```markdown
+# 🎓 Tutorly — Profesorul tău digital (AI Tutor)
 
-Tutorly este o platformă educațională care transformă un avatar (inclusiv dintr-o fotografie) într-un **profesor digital expresiv** (text + voce + video) care explică **pas cu pas**, într-un stil conversațional. Platforma combină tutorat AI, gamificare și progres track-uit pentru a crește implicarea elevilor și a oferi feedback rapid.
+**Tutorly** este o platformă educațională care transformă un avatar (inclusiv dintr-o fotografie) într-un **profesor digital expresiv** (text + voce + video). Acesta explică conceptele **pas cu pas**, într-un stil conversațional, combinând tutoratul AI, gamificarea și urmărirea progresului pentru a crește implicarea elevilor.
 
-🌐 **Live demo:** https://tutorly-vert.vercel.app
-
----
-
-## Cuprins
-- [De ce Tutorly](#de-ce-tutorly)
-- [Funcționalități](#funcționalități)
-- [Cum funcționează](#cum-funcționează)
-- [Tech stack](#tech-stack)
-- [Structura proiectului](#structura-proiectului)
-- [Rulare locală](#rulare-locală)
-  - [Prerechizite](#prerechizite)
-  - [Clonare & instalare](#clonare--instalare)
-  - [Configurare variabile de mediu](#configurare-variabile-de-mediu)
-  - [Pornire backend (FastAPI)](#pornire-backend-fastapi)
-  - [Pornire frontend (React)](#pornire-frontend-react)
-  - [Verificare rapidă](#verificare-rapidă)
-- [Rulare cu Docker](#rulare-cu-docker)
-- [Deployment](#deployment)
-- [Bune practici & securitate](#bune-practici--securitate)
-- [Troubleshooting](#troubleshooting)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [Echipa](#echipa)
-- [Licență](#licență)
+🌐 **Live demo:** [https://tutorly-vert.vercel.app](https://tutorly-vert.vercel.app)
 
 ---
 
-## De ce Tutorly
-
-Provocări reale în educație:
-- **Atenție fragmentată:** lecțiile pasive își pierd rapid eficiența.
-- **Feedback rigid:** elevii au nevoie de explicații adaptate nivelului lor, pe loc.
-- **Interacțiune redusă:** învățarea devine consum de conținut, nu dialog.
-
-Tutorly răspunde prin:
-- **dialog activ** (întrebare → explicație → verificare),
-- **explicații pas cu pas** cu pași intermediari,
-- **profesor digital expresiv** (nu doar text),
-- **gamificare** pentru motivare și progres.
-
----
-
-## Funcționalități
-
-### Pentru elevi
-- 🧠 **Tutor conversațional** (Q&A) pentru clarificări rapide
-- 🧩 **Quiz-uri personalizate** (nivel, ritm, stil)
-- 🎯 **Explicații pas cu pas** + feedback instant
-- 🏆 **Gamificare:** XP, level-up, leaderboard
-- 📈 **Progres & statistici:** evoluție, consistență, preferințe
-
-### Pentru profesori / creatori de conținut
-- 🎭 **Avatar studio:** personalizare profesor digital (inclusiv pe bază de prompt)
-- 🧑‍🏫 **Roluri & control acces** (elev/profesor), experiență adaptată
-
-### Platformă
-- 🌐 Interfață web modernă
-- 🔐 Acces controlat pe roluri
-- ☁️ Persistență în cloud (Firestore)
-- 🚀 Deploy rapid (Vercel + Render)
+## 📑 Cuprins
+- [De ce Tutorly](#-de-ce-tutorly)
+- [Funcționalități](#-funcționalități)
+- [Cum funcționează](#-cum-funcționează)
+- [Tech Stack](#-tech-stack)
+- [Structura Proiectului](#-structura-proiectului)
+- [Rulare Locală](#-rulare-locală)
+  - [Prerechizite](#1-prerechizite)
+  - [Clonare](#2-clonare--instalare)
+  - [Variabile de Mediu](#3-configurare-variabile-de-mediu)
+  - [Backend](#4-pornire-backend-fastapi)
+  - [Frontend](#5-pornire-frontend-react)
+- [Rulare cu Docker](#-rulare-cu-docker)
+- [Deployment](#-deployment)
+- [Bune practici & Securitate](#-bune-practici--securitate)
+- [Troubleshooting](#-troubleshooting)
+- [Roadmap](#-roadmap)
+- [Echipa](#-echipa)
 
 ---
 
-## Cum funcționează
+## 🚀 De ce Tutorly
 
-Pipeline (simplificat):
-1. **Input elev**: text sau voce
-2. (opțional) **STT**: voce → text (ex: Whisper)
-3. **LLM**: model local (ex: Llama 3.2 3B cuantizat via Ollama) generează explicația în stil tutor
-4. **Generare expresivă**: răspuns → audio + video (ex: TTS + HeyGen / SadTalker)
-5. **Output**: video + transcript în UI
+**Provocări reale în educație:**
+* ❌ **Atenție fragmentată:** lecțiile pasive își pierd rapid eficiența.
+* ❌ **Feedback rigid:** elevii au nevoie de explicații adaptate nivelului lor, pe loc.
+* ❌ **Interacțiune redusă:** învățarea devine consum de conținut, nu dialog.
 
-> Notă: componentele de voce/video pot fi rulate în moduri diferite (API extern, local, hibrid), în funcție de chei și infrastructură.
-
----
-
-## Tech stack
-
-- **Frontend:** React + TypeScript
-- **Backend:** FastAPI (Python)
-- **Database:** Firebase Firestore
-- **LLM:** Llama 3.2 3B (quantized) via **Ollama**
-- **Voice:** Whisper (STT) + TTS
-- **Video:** HeyGen + (opțional) SadTalker
-- **Deployment:** Vercel (frontend) + Render (backend)
-- **Containerizare:** Docker
+**Soluția Tutorly:**
+* ✅ **Dialog activ** (întrebare → explicație → verificare).
+* ✅ **Explicații pas cu pas** cu pași intermediari clari.
+* ✅ **Profesor digital expresiv** (video/audio, nu doar text).
+* ✅ **Gamificare** pentru motivare și progres vizibil.
 
 ---
 
-## Structura proiectului
+## ✨ Funcționalități
 
-Monorepo:
+### 👨‍🎓 Pentru Elevi
+* 🧠 **Tutor conversațional (Q&A):** Clarificări rapide și contextuale.
+* 🧩 **Quiz-uri personalizate:** Nivel, ritm și stil adaptabil.
+* 🎯 **Explicații pas cu pas** + feedback instant.
+* 🏆 **Gamificare:** XP, level-up, leaderboard.
+* 📈 **Progres & statistici:** Evoluție, consistență, preferințe.
+
+### 🧑‍🏫 Pentru Profesori / Creatori
+* 🎭 **Avatar Studio:** Personalizare profesor digital (inclusiv pe bază de prompt).
+* 🔐 **Control:** Roluri & control acces (elev/profesor).
+
+### ⚙️ Platformă
+* Interfață web modernă.
+* Persistență în cloud (Firestore).
+* Deploy rapid (Vercel + Render).
+
+---
+
+## ⚙️ Cum funcționează
+
+Pipeline simplificat:
+1.  **Input elev:** Text sau voce.
+2.  **(Opțional) STT:** Voce → text (ex: Whisper).
+3.  **LLM:** Model local (ex: Llama 3.2 3B cuantizat via Ollama) generează explicația.
+4.  **Generare expresivă:** Răspuns → audio + video (ex: TTS + HeyGen / SadTalker).
+5.  **Output:** Video + transcript în UI.
+
+> **Notă:** Componentele de voce/video pot fi rulate în moduri diferite (API extern, local, hibrid), în funcție de chei și infrastructură.
+
+---
+
+## 🛠️ Tech Stack
+
+| Componentă | Tehnologie |
+| :--- | :--- |
+| **Frontend** | React, TypeScript, Vite |
+| **Backend** | FastAPI (Python) |
+| **Database** | Firebase Firestore |
+| **LLM** | Llama 3.2 3B (quantized) via **Ollama** |
+| **Voice/Video** | Whisper (STT) + TTS + HeyGen / SadTalker |
+| **Deployment** | Vercel (FE) + Render (BE) |
+| **DevOps** | Docker |
+
+---
+
+## 📂 Structura proiectului
+
+Proiectul este organizat ca un monorepo:
+
 ```text
 Tutorly/
-├─ frontend/        # aplicația web (React + TS)
-└─ backend/         # API (FastAPI) + integrare Firestore + servicii AI
+├── frontend/        # Aplicația web (React + TS)
+└── backend/         # API (FastAPI) + integrare Firestore + servicii AI
 
-Rulare locală
-Prerechizite
+```
+
+---
+
+## 💻 Rulare Locală
+
+### 1. Prerechizite
 
 Asigură-te că ai instalat:
 
-Git
+* Git
+* Node.js (recomandat 18+)
+* Python (recomandat 3.10+)
+* Proiect Firebase + Firestore activat
+* *(Opțional)* Docker
+* *(Opțional)* Ollama (dacă rulezi LLM local)
 
-Node.js (recomandat 18+)
+### 2. Clonare & Instalare
 
-Python (recomandat 3.10+)
-
-Firebase project + Firestore activat
-
-(opțional) Docker
-
-(opțional) Ollama (dacă rulezi LLM local)
-
-Clonare & instalare
-git clone https://github.com/MihaiMunteanu1/Tutorly.git
+```bash
+git clone [https://github.com/MihaiMunteanu1/Tutorly.git](https://github.com/MihaiMunteanu1/Tutorly.git)
 cd Tutorly
 
-Configurare variabile de mediu
+```
 
-Recomandare: creează fișiere .env locale pornind de la .env.example (dacă există în repo).
-Nu urca niciodată chei reale în Git.
+### 3. Configurare Variabile de Mediu
 
-Backend (backend/.env)
+Recomandare: creează fișiere `.env` locale pornind de la `.env.example`.
 
-Exemplu (ajustează după proiectul tău):
+**Backend (`backend/.env`):**
 
+```env
 APP_ENV=development
 APP_HOST=0.0.0.0
 APP_PORT=8000
@@ -137,7 +138,7 @@ CORS_ORIGINS=http://localhost:5173
 
 # Firebase / Firestore
 FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_CREDENTIALS_JSON=path_or_json_here
+FIREBASE_CREDENTIALS_JSON=path_or_json_content
 
 # LLM (Ollama)
 OLLAMA_BASE_URL=http://localhost:11434
@@ -146,13 +147,21 @@ OLLAMA_MODEL=llama3.2:3b-instruct-q4
 # Video/TTS (dacă folosești API extern)
 HEYGEN_API_KEY=your_key_here
 
-Frontend (frontend/.env)
+```
+
+**Frontend (`frontend/.env`):**
+
+```env
 VITE_API_BASE_URL=http://localhost:8000
+# Dacă folosești Firebase SDK direct în FE, adaugă variabilele VITE_FIREBASE_*
 
+```
 
-Dacă frontend folosește Firebase SDK direct, adaugă și variabilele VITE_FIREBASE_* conform proiectului tău Firebase.
+### 4. Pornire Backend (FastAPI)
 
-Pornire backend (FastAPI)
+Deschide un terminal în folderul `backend`:
+
+```bash
 cd backend
 python -m venv .venv
 
@@ -165,147 +174,114 @@ source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
+```
 
-✅ Backend ar trebui să fie disponibil la:
+✅ Backend disponibil la: `http://localhost:8000` (Docs: `/docs`)
 
-http://localhost:8000
+### 5. Pornire Frontend (React)
 
-Documentație API (dacă e activată): http://localhost:8000/docs
+Deschide un terminal **nou** în folderul `frontend`:
 
-Pornire frontend (React)
-
-Într-un terminal nou:
-
+```bash
 cd frontend
 npm install
 npm run dev
 
+```
 
-✅ Frontend pornește de obicei la:
+✅ Frontend disponibil la: `http://localhost:5173`
 
-http://localhost:5173
+### 6. Verificare rapidă
 
-Verificare rapidă
+1. Deschide frontend-ul în browser.
+2. Testează funcționalitatea de chat / login.
+3. Dacă folosești LLM local, asigură-te că Ollama rulează și modelul este descărcat.
 
-Deschide frontend-ul în browser.
+---
 
-Verifică dacă aplicația poate apela backend-ul (de ex. login / chat / quiz).
+## 🐳 Rulare cu Docker
 
-Dacă ai funcționalitate LLM locală:
+Dacă ai `docker-compose.yml` în rădăcina proiectului, poți porni totul cu o singură comandă:
 
-pornește Ollama
-
-verifică OLLAMA_BASE_URL și OLLAMA_MODEL
-
-Rulare cu Docker
-
-Dacă ai Dockerfile / docker-compose.yml în repo:
-
+```bash
 docker compose up --build
 
+```
 
-Recomandare (dacă vrei să completezi proiectul):
+> Aceasta va porni backend-ul și frontend-ul în containere izolate.
 
-docker-compose.yml în root cu servicii: backend, frontend, (opțional) ollama.
+---
 
-Deployment
-Frontend (Vercel)
+## 🌍 Deployment
 
-setează VITE_API_BASE_URL către backend-ul public (Render)
+### Frontend (Vercel)
 
-conectează repo-ul GitHub la Vercel
+1. Setează `VITE_API_BASE_URL` către URL-ul backend-ului public (ex: Render).
+2. Conectează repo-ul GitHub la Vercel.
+3. Deploy automat la push pe branch-ul principal.
 
-deploy automat la push pe branch-ul principal
+### Backend (Render)
 
-Backend (Render)
+1. Conectează repo-ul în Render.
+2. Selectează folderul `backend/` ca Root Directory.
+3. Adaugă variabilele de mediu în Render Dashboard.
+4. **Important:** Gestionează credențialele Firebase ca secret file sau variabilă de mediu, nu le urca în repo.
 
-conectează repo-ul
+### Firestore (Firebase)
 
-selectează root backend/
+1. Configurează colecțiile și regulile (security rules).
+2. Activează autentificarea dacă folosești Firebase Auth.
 
-setează variabilele de mediu din Render Dashboard
+---
 
-gestionează credențialele Firebase ca secret, nu ca fișier în repo
+## 🛡️ Bune practici & Securitate
 
-Firestore (Firebase)
+* 🔑 **Chei:** Nu stoca niciodată chei în Git. Folosește `.env`.
+* 🔒 **CORS:** Limitează originile permise în production.
+* 🧾 **Logging:** Nu loga token-uri sau date personale.
+* 🛡️ **Rate limiting:** Recomandat pentru endpoint-urile AI.
+* ✅ **Validări:** Sanitizarea input-urilor de la utilizatori.
 
-configurează colecții și reguli (security rules)
+---
 
-activează autentificarea dacă folosești auth
+## 🔧 Troubleshooting
 
-Bune practici & securitate
+| Problemă | Soluție Posibilă |
+| --- | --- |
+| **Frontend nu vede Backend** | Verifică `VITE_API_BASE_URL` și setările CORS din backend. |
+| **Erori Firestore** | Verifică `FIREBASE_PROJECT_ID`, credențialele și Security Rules. |
+| **Ollama nu răspunde** | Verifică dacă rulează pe portul 11434 și dacă modelul este corect setat în `.env`. |
+| **Erori Video/TTS** | Verifică cheile API și cotele de utilizare (quota). |
 
-🔑 Cheile în env vars / secrets, niciodată în cod.
+---
 
-🔒 CORS: limitează originile permise în production.
+## 🗺️ Roadmap
 
-🧾 Logging: nu loga token-uri/chei/date personale.
+* [ ] 🎓 Planuri de învățare pe săptămâni + obiective clare.
+* [ ] 🧠 Adaptive tutoring: diagnostic + remediere personalizată.
+* [ ] 📚 Import materiale (PDF) + generare quiz automat.
+* [ ] 👨‍👩‍👧 Mod “Parent View” pentru rapoarte.
+* [ ] 🧪 Teste A/B pentru stiluri de predare.
 
-🛡️ Rate limiting (recomandat): endpoint-urile AI pot fi abuzate.
+---
 
-✅ Validări input: limite pentru prompt/audio și sanitizare.
+## 🤝 Contributing
 
-Troubleshooting
-Frontend nu vede backend-ul
+PR-urile sunt binevenite!
 
-verifică VITE_API_BASE_URL
+1. Fork repo.
+2. Creează branch: `feat/nume` sau `fix/nume`.
+3. Commit-uri clare.
+4. PR cu descriere și screenshots.
 
-verifică CORS în backend (CORS_ORIGINS)
+---
 
-verifică porturile (8000 / 5173)
+## 👥 Echipa
 
-Firestore errors
+* **Munteanu Mihai**
+* **Moise Ioana**
+* **Mărginean Dan**
 
-verifică FIREBASE_PROJECT_ID
+```
 
-verifică credențialele (service account) / permisiunile
-
-verifică regulile Firestore
-
-Ollama / LLM nu răspunde
-
-verifică dacă rulează pe http://localhost:11434
-
-verifică numele modelului setat în OLLAMA_MODEL
-
-rulează manual: ollama list
-
-Servicii video/TTS
-
-verifică cheile API și limita de utilizare (quota)
-
-verifică formatul cerut de provider (payload, voice id etc.)
-
-Roadmap
-
-🎓 Planuri de învățare pe săptămâni + obiective clare
-
-🧠 Adaptive tutoring: diagnostic + remediere personalizată
-
-📚 Import materiale (PDF) + generare quiz automat
-
-👨‍👩‍👧 Mod “parent view” pentru rapoarte și recomandări
-
-🧪 Teste A/B pentru stiluri de predare (scurt vs detaliat)
-
-Contributing
-
-PR-urile sunt binevenite.
-
-Workflow recomandat:
-
-Fork repo
-
-Creează branch: feat/<nume> sau fix/<nume>
-
-Commit-uri clare (ex: feat: add quiz difficulty scaling)
-
-PR cu descriere + screenshots dacă e UI
-
-Echipa
-
-Munteanu Mihai
-
-Moise Ioana
-
-Mărginean Dan
+```
