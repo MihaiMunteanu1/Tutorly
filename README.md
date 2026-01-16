@@ -1,4 +1,3 @@
-```markdown
 # 🎓 Tutorly — Profesorul tău digital (AI Tutor)
 
 **Tutorly** este o platformă educațională care transformă un avatar (inclusiv dintr-o fotografie) într-un **profesor digital expresiv** (text + voce + video). Acesta explică conceptele **pas cu pas**, într-un stil conversațional, combinând tutoratul AI, gamificarea și urmărirea progresului pentru a crește implicarea elevilor.
@@ -98,9 +97,7 @@ Proiectul este organizat ca un monorepo:
 Tutorly/
 ├── frontend/        # Aplicația web (React + TS)
 └── backend/         # API (FastAPI) + integrare Firestore + servicii AI
-
 ```
-
 ---
 
 ## 💻 Rulare Locală
