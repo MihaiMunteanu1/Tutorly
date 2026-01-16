@@ -1,98 +1,105 @@
-# Tutorly — Profesorul tău digital
+# Tutorly — Profesorul tău digital (AI Tutor)
 
-Tutorly este o platformă educațională care transformă un avatar (inclusiv dintr-o fotografie) într-un **profesor digital expresiv** (text + voce + video) ce explică **pas cu pas**, într-un stil conversațional, pentru a menține atenția elevilor și pentru a oferi feedback instant. :contentReference[oaicite:2]{index=2}
+[![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20TypeScript-61DAFB?logo=react&logoColor=white)](#)
+[![Backend](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi&logoColor=white)](#)
+[![DB](https://img.shields.io/badge/Database-Firestore-FFCA28?logo=firebase&logoColor=black)](#)
+[![Deploy](https://img.shields.io/badge/Deploy-Vercel%20%2B%20Render-000000?logo=vercel&logoColor=white)](#)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](#)
 
-🌐 Demo: https://tutorly-vert.vercel.app :contentReference[oaicite:3]{index=3}
+Tutorly este o platformă educațională care transformă un avatar (inclusiv dintr-o fotografie) într-un **profesor digital expresiv** (text + voce + video) care explică **pas cu pas**, într-un stil conversațional. Scopul este să crească implicarea elevilor, să ofere feedback rapid și să creeze un mediu de învățare mai “uman”.
+
+🌐 **Live demo:** https://tutorly-vert.vercel.app
 
 ---
 
-## De ce Tutorly?
+## Cuprins
+- [De ce Tutorly](#de-ce-tutorly)
+- [Funcționalități](#funcționalități)
+- [Cum funcționează](#cum-funcționează)
+- [Tech stack](#tech-stack)
+- [Structura proiectului](#structura-proiectului)
+- [Quickstart](#quickstart)
+  - [Prerechizite](#prerechizite)
+  - [Rulare locală](#rulare-locală)
+  - [Variabile de mediu](#variabile-de-mediu)
+- [Rulare cu Docker](#rulare-cu-docker)
+- [Deployment](#deployment)
+- [Bune practici & securitate](#bune-practici--securitate)
+- [Troubleshooting](#troubleshooting)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [Echipa](#echipa)
+- [Licență](#licență)
 
-Problemele pe care le atacăm:
-- **Deconectare**: copiii își pierd rapid interesul fără interactivitate
-- **Feedback rigid**: lipsa îndrumării adaptate progresului individual
-- **Atenție fragmentată**: lecțiile tradiționale lungi devin obositoare și ineficiente :contentReference[oaicite:4]{index=4}
+---
 
-Tutorly pune accent pe:
-- dialog activ (nu consum pasiv),
-- limbaj adaptat vârstei,
-- siguranță emoțională și încurajare. :contentReference[oaicite:5]{index=5}
+## De ce Tutorly
+
+Provocări reale în educație:
+- **Atenție fragmentată:** lecțiile lungi, pasive, pierd rapid interesul elevilor.
+- **Feedback rigid:** elevii au nevoie de explicații adaptate nivelului lor, pe loc.
+- **Interacțiune redusă:** „învățatul” devine consum de conținut, nu dialog.
+
+Tutorly răspunde prin:
+- **dialog activ** (întrebare → explicație → verificare),
+- **explicații pas cu pas**, cu pași intermediari,
+- **profesor digital expresiv** (nu doar text),
+- **gamificare** pentru motivare și progres.
 
 ---
 
 ## Funcționalități
 
-### Educaționale
-- teste/quiz-uri **personalizate**
-- dificultate progresivă
-- variație mare de materii disponibile
-- mediu sigur de învățare :contentReference[oaicite:6]{index=6}
+### Pentru elevi
+- 🧠 **Tutor conversațional** (Q&A) pentru clarificări rapide
+- 🧩 **Quiz-uri personalizate** (nivel, ritm, stil)
+- 🎯 **Explicații pas cu pas** + feedback instant
+- 🏆 **Gamificare:** XP, level-up, leaderboard
+- 📈 **Progres & statistici:** evoluție, consistență, preferințe
 
-### Gamificare
-- XP + niveluri + leaderboard :contentReference[oaicite:7]{index=7}
+### Pentru profesori / creatori de conținut
+- 🎭 **Avatar studio:** personalizare profesor digital (inclusiv pe bază de prompt)
+- 🧑‍🏫 **Roluri & control acces** (elev/profesor), experiență adaptată
 
-### Software / Platformă
-- acces **role-based** (elev / profesor)
-- chat / video live cu profesorul digital
-- “studio de avatare”
-- tracking al progresului și preferințelor
-- generare profesori pornind de la poze
-- personalizare avatar pe bază de prompt
-- interfață web intuitivă :contentReference[oaicite:8]{index=8}
-
----
-
-## Cu ce ne diferențiem?
-
-1. **Conversațional**: răspunde la întrebări, nu doar prezintă conținutul  
-2. **Expresiv**: avatar cu voce și video, nu doar text  
-3. **Pas cu pas**: oferă explicații intermediare, nu doar răspunsul final :contentReference[oaicite:9]{index=9}
+### Platformă
+- 🌐 Interfață web modernă
+- 🔐 Acces controlat pe roluri
+- ☁️ Persistență în cloud (Firestore)
+- 🚀 Deploy rapid (Vercel + Render)
 
 ---
 
-## Arhitectură (pipeline)
+## Cum funcționează
 
-Fluxul (simplificat):
-1. Utilizatorul pune o întrebare (text sau voce)
-2. Dacă e voce: **Whisper** (Voice → Text)
-3. Întrebarea ajunge la **LLM** (Llama 3.2 3B, quantized, rulând prin **Ollama**) + prompt de tutor
-4. Răspunsul este transformat în **Audio + Video** (TTS + HeyGen; opțional SadTalker)
-5. Se livrează către UI: **video + transcript** :contentReference[oaicite:10]{index=10}
+Pipeline (simplificat):
+
+1. **Input elev**: text sau voce  
+2. (opțional) **STT**: voce → text (ex: Whisper)
+3. **LLM**: model local (ex: Llama 3.2 3B cuantizat via Ollama) generează explicația în stil tutor
+4. **Generare expresivă**: răspuns → audio + video (ex: TTS + HeyGen / SadTalker)
+5. **Output**: video + transcript în UI
+
+> Notă: componentele de video/voce pot fi rulate în diverse moduri (API extern, local, hibrid), în funcție de chei și infrastructură.
 
 ---
 
 ## Tech stack
 
-- **Frontend**: React + TypeScript
-- **Backend**: FastAPI + Firestore
-- **LLM**: Llama 3.2 3B (quantized), via Ollama
-- **STT/TTS**: Whisper (+ TTS)
-- **Video**: HeyGen + SadTalker
-- **Deployment**: Docker; Frontend pe Vercel; Backend pe Render; DB pe Firebase/Firestore :contentReference[oaicite:11]{index=11}
+- **Frontend:** React + TypeScript
+- **Backend:** FastAPI (Python)
+- **Database:** Firebase Firestore
+- **LLM:** Llama 3.2 3B (quantized) via **Ollama**
+- **Voice:** Whisper (STT) + TTS
+- **Video:** HeyGen + (opțional) SadTalker
+- **Deployment:** Vercel (frontend) + Render (backend)
+- **Containerizare:** Docker
 
 ---
 
-## Structura repo-ului
+## Structura proiectului
 
-Repo-ul este organizat ca un monorepo:
-- `frontend/`
-- `backend/` :contentReference[oaicite:12]{index=12}
-
----
-
-## Rulare locală (development)
-
-> Notă: numele exacte ale fișierelor de configurare/variabilelor de mediu pot diferi. Dacă ai un `.env.example` în `frontend/` sau `backend/`, folosește-l ca referință.
-
-### Cerințe
-- Node.js (recomandat 18+)
-- Python (recomandat 3.10+)
-- Cont/proiect Firebase (Firestore)
-- (Opțional) Docker
-- (Dacă rulezi LLM local) Ollama + modelul configurat :contentReference[oaicite:13]{index=13}
-
-### 1) Frontend
-```bash
-cd frontend
-npm install
-npm run dev
+Monorepo:
+```text
+Tutorly/
+├─ frontend/        # aplicația web (React + TS)
+└─ backend/         # API (FastAPI) + integrare Firestore + servicii AI
