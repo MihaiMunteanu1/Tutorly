@@ -116,8 +116,8 @@ Asigură-te că ai instalat:
 ### 2. Clonare & Instalare
 
 ```bash
-git clone [https://github.com/MihaiMunteanu1/Tutorly.git](https://github.com/MihaiMunteanu1/Tutorly.git)
-cd Tutorly
+git clone [https://github.com/LauraDiosan-CS/projects-super-awesome-team-name.git](https://github.com/LauraDiosan-CS/projects-super-awesome-team-name.git)
+cd ConversationalAvatar/ProjectWithHeygen
 
 ```
 
