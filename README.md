@@ -276,5 +276,3 @@ PR-urile sunt binevenite!
 * Moise Ioana
 * Marginean Dan
 
-```
-```
