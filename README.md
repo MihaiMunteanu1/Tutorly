@@ -278,7 +278,3 @@ PR-urile sunt binevenite!
 * **Munteanu Mihai**
 * **Moise Ioana**
 * **Mărginean Dan**
-
-```
-
-```
