@@ -119,8 +119,7 @@ Asigura-te ca ai instalat:
 ### 2. Clonare si instalare
 
 ```bash
-git clone https://github.com/LauraDiosan-CS/projects-super-awesome-team-name.git
-cd ConversationalAvatar/ProjectWithHeygen
+git clone https://github.com/MihaiMunteanu1/Tutorly.git
 ```
 
 ### 3. Configurare variabile de mediu
@@ -130,21 +129,15 @@ Recomandare: creeaza fisiere `.env` locale pornind de la `.env.example`.
 **Backend (`backend/.env`):**
 
 ```env
-APP_ENV=development
-APP_HOST=0.0.0.0
-APP_PORT=8000
-CORS_ORIGINS=http://localhost:5173
+HEYGEN_API_KEY=...
+JWT_SECRET=...
+HEYGEN_API_LIVEAVATAR_KEY=...
 
-# Firebase / Firestore
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_CREDENTIALS_JSON=path_or_json_content
-
-# LLM (Ollama)
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2:3b-instruct-q4
-
-# Video/TTS (daca folosesti API extern)
-HEYGEN_API_KEY=your_key_here
+# Configurare Email (SMTP)
+SMTP_SERVER=...
+SMTP_PORT=...
+SMTP_USERNAME=...
+SMTP_PASSWORD=...
 ```
 
 **Frontend (`frontend/.env`):**
