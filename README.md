@@ -4,6 +4,16 @@
 
 **Live demo:** https://tutorly-indol.vercel.app
 
+**Prezentari + Demo + Teaser + Documentatie**: https://drive.google.com/drive/folders/1KpSas3AEbYWa0BE97r9Ip70P6xXl5wpR?usp=sharing
+
+**Notebooks**: <br>
+https://colab.research.google.com/drive/1Z8cv2Sd8w52wDuD-IO6hIMCU9U9FgOMt?usp=sharing -> **LLama 3.2 3B** <br>
+https://colab.research.google.com/drive/1HBdC8bJWRoxYsrpjkU6j1_cmXqjmGK9M?usp=sharing -> **DialoGPT**  
+
+**Huggingface**: <br>
+https://huggingface.co/i04n4/llama3.2-3b-math-gguf -> **Llama 3.2 3B** <br>
+https://huggingface.co/Mihai20/eedi-dialogpt-tutor -> **DialoGPT** 
+
 ---
 
 ## Cuprins
@@ -18,13 +28,7 @@
   - [3. Configurare variabile de mediu](#3-configurare-variabile-de-mediu)
   - [4. Pornire backend (FastAPI)](#4-pornire-backend-fastapi)
   - [5. Pornire frontend (React)](#5-pornire-frontend-react)
-  - [6. Verificare rapida](#6-verificare-rapida)
-- [Rulare cu Docker](#rulare-cu-docker)
-- [Deployment](#deployment)
-- [Bune practici si securitate](#bune-practici-si-securitate)
-- [Troubleshooting](#troubleshooting)
 - [Roadmap](#roadmap)
-- [Contributing](#contributing)
 - [Echipa](#echipa)
 
 ---
@@ -107,24 +111,21 @@ Tutorly/
 
 ### 1. Prerechizite
 
-Asigura-te ca ai instalat:
-
 * Git
 * Node.js (recomandat 18+)
 * Python (recomandat 3.10+)
-* Proiect Firebase + Firestore activat
+* Proiect Firebase + Firestore
 * (Optional) Docker
-* (Optional) Ollama (daca rulezi LLM local)
+* (Optional) Ollama (pentru LLM local)
 
 ### 2. Clonare si instalare
 
 ```bash
-git clone https://github.com/MihaiMunteanu1/Tutorly.git
+git clone https://github.com/LauraDiosan-CS/projects-super-awesome-team-name.git
+cd ConversationalAvatar/ProjectWithHeygen
 ```
 
 ### 3. Configurare variabile de mediu
-
-Recomandare: creeaza fisiere `.env` locale pornind de la `.env.example`.
 
 **Backend (`backend/.env`):**
 
@@ -144,12 +145,9 @@ SMTP_PASSWORD=...
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
-# Daca folosesti Firebase SDK direct in FE, adauga variabilele VITE_FIREBASE_*
 ```
 
 ### 4. Pornire backend (FastAPI)
-
-Deschide un terminal in folderul `backend`:
 
 ```bash
 cd backend
@@ -169,8 +167,6 @@ Backend disponibil la: `http://localhost:8000` (Docs: `/docs`)
 
 ### 5. Pornire frontend (React)
 
-Deschide un terminal nou in folderul `frontend`:
-
 ```bash
 cd frontend
 npm install
@@ -178,69 +174,8 @@ npm run dev
 ```
 
 Frontend disponibil la: `http://localhost:5173`
-
-### 6. Verificare rapida
-
-1. Deschide frontend-ul in browser.
-2. Testeaza functionalitatea de chat / login.
-3. Daca folosesti LLM local, asigura-te ca Ollama ruleaza si modelul este descarcat.
-
 ---
 
-## Rulare cu Docker
-
-Daca ai `docker-compose.yml` in radacina proiectului, poti porni totul cu o singura comanda:
-
-```bash
-docker compose up --build
-```
-
-> Aceasta va porni backend-ul si frontend-ul in containere izolate.
-
----
-
-## Deployment
-
-### Frontend (Vercel)
-
-1. Seteaza `VITE_API_BASE_URL` catre URL-ul backend-ului public (ex: Render).
-2. Conecteaza repo-ul GitHub la Vercel.
-3. Deploy automat la push pe branch-ul principal.
-
-### Backend (Render)
-
-1. Conecteaza repo-ul in Render.
-2. Selecteaza folderul `backend/` ca Root Directory.
-3. Adauga variabilele de mediu in Render Dashboard.
-4. Important: gestioneaza credentialele Firebase ca secret file sau variabila de mediu, nu le urca in repo.
-
-### Firestore (Firebase)
-
-1. Configureaza colectiile si regulile (security rules).
-2. Activeaza autentificarea daca folosesti Firebase Auth.
-
----
-
-## Bune practici si securitate
-
-* Chei: nu stoca niciodata chei in Git. Foloseste `.env`.
-* CORS: limiteaza originile permise in production.
-* Logging: nu loga token-uri sau date personale.
-* Rate limiting: recomandat pentru endpoint-urile AI.
-* Validari: sanitizarea input-urilor de la utilizatori.
-
----
-
-## Troubleshooting
-
-| Problema                 | Solutie posibila                                                                   |
-| ------------------------ | ---------------------------------------------------------------------------------- |
-| Frontend nu vede Backend | Verifica `VITE_API_BASE_URL` si setarile CORS din backend.                         |
-| Erori Firestore          | Verifica `FIREBASE_PROJECT_ID`, credentialele si Security Rules.                   |
-| Ollama nu raspunde       | Verifica daca ruleaza pe portul 11434 si daca modelul este corect setat in `.env`. |
-| Erori Video/TTS          | Verifica cheile API si cotele de utilizare (quota).                                |
-
----
 
 ## Roadmap
 
@@ -250,16 +185,6 @@ docker compose up --build
 * [ ] Mod "Parent View" pentru rapoarte.
 * [ ] Teste A/B pentru stiluri de predare.
 
----
-
-## Contributing
-
-PR-urile sunt binevenite!
-
-1. Fork repo.
-2. Creeaza branch: `feat/nume` sau `fix/nume`.
-3. Commit-uri clare.
-4. PR cu descriere si screenshots.
 
 ---
 
